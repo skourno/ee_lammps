@@ -1,0 +1,109 @@
+LAMMPS (3 Mar 2020)
+variable seed equal 582783
+units real
+atom_style full
+read_data tip4p05.data
+  orthogonal box = (0 0 0) to (40.0439 40.0439 40.0439)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  6518 atoms
+  scanning bonds ...
+  2 = max bonds/atom
+  scanning angles ...
+  1 = max angles/atom
+  reading bonds ...
+  4268 bonds
+  reading angles ...
+  2134 angles
+  2 = max # of 1-2 neighbors
+  1 = max # of 1-3 neighbors
+  1 = max # of 1-4 neighbors
+  2 = max # of special neighbors
+  special bonds CPU = 0.0011472 secs
+  read_data CPU = 0.0114977 secs
+include tip4p05.ff
+# Original model from Berendsen et al, J Phys Chem 91:6269 (1987)
+# Charges and geometry are specified in the "data." file.
+
+mass 1 1.00794 # H
+mass 2 15.9994 # O
+mass 3 22.9900 # Na
+mass 4 35.4530 # Cl
+
+pair_style lj/cut/tip4p/long 2 1 1 1 0.1546 12.0
+#pair_modify tail yes
+#kspace_style ewald 1e-8
+#kspace_modify gewald 0.25 kmax/ewald 13 13 13
+kspace_style pppm/tip4p 1.0e-5
+pair_modify table 0
+
+pair_coeff 1 1 0.00000  0.000
+pair_coeff 1 2 0.00000  0.000
+pair_coeff 2 2 0.18520 3.1589
+pair_coeff 3 3 0.35262 2.160
+pair_coeff 2 3 0.25555 2.659
+pair_coeff 4 4 0.012785 4.83
+pair_coeff 2 4 0.04866  3.994
+pair_coeff 3 4 0.067141 3.495
+
+bond_style harmonic
+bond_coeff 1 0.0 0.9572
+
+angle_style harmonic
+angle_coeff 1 0.0 104.52
+
+variable Text equal 298.0
+variable Pext equal 1.0
+velocity all create ${Text} 1234
+velocity all create 298 1234
+neighbor 2.0 bin
+neigh_modify every 1 delay 0 check yes
+thermo_style custom step temp press epair evdwl ecoul elong
+thermo_modify flush yes
+thermo 100
+timestep 2.0
+fix constrain all shake 1.0e-4 100 0 b 1 a 1
+  0 = # of size 2 clusters
+  0 = # of size 3 clusters
+  0 = # of size 4 clusters
+  2134 = # of frozen angles
+  find clusters CPU = 0.000977221 secs
+fix integrate all nvt temp ${Text} ${Text} 100.0
+fix integrate all nvt temp 298 ${Text} 100.0
+fix integrate all nvt temp 298 298 100.0
+fix removeMomentum all momentum 1 linear 1 1 1
+group na type 3
+58 atoms in group na
+group cl type 4
+58 atoms in group cl
+variable idx_test_Na string -1
+variable idx_test_Cl string -1
+variable q_test_Na string Inf
+variable q_test_Cl string Inf
+run 5000
+PPPM initialization ...
+  extracting TIP4P info from pair style
+  using polynomial approximation for long-range coulomb (src/kspace.cpp:332)
+  G vector (1/distance) = 0.260092
+  grid = 32 32 32
+  stencil order = 5
+  estimated absolute RMS force accuracy = 0.00317788
+  estimated relative force accuracy = 9.5701e-06
+  using double precision FFTW3
+  3d grid and FFT values/proc = 59319 32768
+Neighbor list info ...
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 14.3092
+  ghost atom cutoff = 14.3092
+  binsize = 7.1546, bins = 6 6 6
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair lj/cut/tip4p/long, perpetual
+      attributes: half, newton on
+      pair build: half/bin/newton
+      stencil: half/bin/3d/newton
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 45.14 | 45.14 | 45.14 Mbytes
+Step Temp Press E_pair E_vdwl E_coul E_long 
+       0    443.09058    4320.7562   -35156.665    5689.7106    157864.65   -198711.02 
+     100    299.69779    1018.1491    -35388.49    5091.7502    158225.48   -198705.72 
