@@ -5,9 +5,12 @@
 # Written by Srikanth Ravipati (rsri131@gmail.com)
 
 import numpy as np
-from mpi4py import MPI
-from Hist import Histogram
-from WL import WL_histogram
+
+from mpi4py   import MPI
+from Hist     import Histogram
+from WL       import WL_histogram
+from lammps   import lammps
+from init_sim import Initialize_tip4p_with_Ions_simulation
 
 comm = MPI.COMM_WORLD
 
@@ -40,29 +43,9 @@ delta_q_test  = Hist_EE.width_bin
 Temp          = 298.0
 Beta          = 1.0 / (Temp * 8.314 / 4184.0)
 
-from lammps import lammps
-lmp = lammps(cmdargs=["-screen","none"])
-lmp.command("variable seed equal 582783")
-lmp.command("units real")
-lmp.command("atom_style full")
-lmp.command("read_data tip4p05.data")
-lmp.command("include tip4p05.ff")
-lmp.command("variable Text equal 298.0")
-lmp.command("variable Pext equal 1.0")
-lmp.command("velocity all create ${Text} 1234")
-lmp.command("neighbor 2.0 bin")
-lmp.command("neigh_modify every 1 delay 0 check yes")
+DataFileName  = "tip4p05.data"
 
-lmp.command("thermo_style custom step temp press epair evdwl ecoul elong")
-lmp.command("thermo_modify flush yes")
-lmp.command("thermo 100") 
-
-lmp.command("timestep 2.0")
-
-lmp.command("fix constrain all shake 1.0e-4 100 0 b 1 a 1")
-lmp.command("fix integrate all nvt temp ${Text} ${Text} 100.0")
-        #iso ${Pext} ${Pext} 1000.0")
-lmp.command("fix removeMomentum all momentum 1 linear 1 1 1")
+lmp = Initialize_tip4p_with_Ions_simulation(DataFileName, Temp, iseed)
 
 lmp.command("group na type 3")
 lmp.command("group cl type 4")
