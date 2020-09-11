@@ -31,13 +31,14 @@ i_atom_Na_f   = 6460
 i_atom_Cl_i   = 6461
 i_atom_Cl_f   = 6518
 natoms        = 6518
-idx_test_Na = 6460
-idx_test_Cl = 6518
+idx_test_Na   = 6460
+idx_test_Cl   = 6518
+NIonsPairs    = 58
 
-delta_q_test = Hist_EE.width_bin
+delta_q_test  = Hist_EE.width_bin
 
-Temp = 298.0
-Beta = 1.0 / (Temp * 8.314 / 4184.0)
+Temp          = 298.0
+Beta          = 1.0 / (Temp * 8.314 / 4184.0)
 
 from lammps import lammps
 lmp = lammps(cmdargs=["-screen","none"])
@@ -79,90 +80,97 @@ flag = lmp.set_variable("idx_test_Cl",idx_test_Cl)
 
 
 lmp.command("run 5000")
-q_current = 1.0
-idx_test_dir = 19999999999999
-accept = False
+q_current    = 1.0
+accept       = False
 
-idx_shift_Na = -10000000000
-idx_shift_Cl = -10000000000
+# initialize the following auxiliary variables
+idx_test_dir = 0 # index that decides the direction
+idx_shift_Na = 0 # index to help with choosing a new Na test particle
+idx_shift_Cl = 0 # index to help with choosing a new Cl test particle
 
 for i_loop in range(100000):
-   if (np.mod(i_loop,500) == 0 and comm.Get_rank() == 0):
-      Hist_WL.write_to_a_file(ee_hist_WL)
-   comm.Barrier()
-   lmp.command("run 20")
-   e_old = lmp.extract_compute("thermo_pe",0,0)
-   old_idx_hist = Hist_EE.idx_hist(q_current)
-
-   # If all ion pairs have full fractional charges, 
-   # randomly select ions to be the test pair
-   if (old_idx_hist == Hist_EE.size-1 and comm.Get_rank() == 0):
-      idx_shift_Na = np.random.randint(0,58)
-      idx_test_Na  = i_atom_Na_i + idx_shift_Na 
-      idx_shift_Cl = np.random.randint(0,58)
-      idx_test_Cl  = i_atom_Cl_i + idx_shift_Cl
-   idx_test_Na = comm.bcast(idx_test_Na,root=0)
-   idx_test_Cl = comm.bcast(idx_test_Cl,root=0)
-   flag = lmp.set_variable("idx_test_Na",idx_test_Na)
-   flag = lmp.set_variable("idx_test_Cl",idx_test_Cl)
+  if (np.mod(i_loop,500) == 0 and comm.Get_rank() == 0):
+    Hist_WL.write_to_a_file(ee_hist_WL)
   
-   # Processor that has rank zero decides which direction to move
-   # and broadcasts to everybody else
-   if (comm.Get_rank() == 0):
-      rand_num = np.random.rand()
-      if (rand_num < 0.5):
-         idx_test_dir = 1
+  comm.Barrier()
+  lmp.command("run 20")
+
+  e_old        = lmp.extract_compute("thermo_pe",0,0)
+  old_idx_hist = Hist_EE.idx_hist(q_current)
+
+  # If all ion pairs have full fractional charges, 
+  # randomly select ions to be the test pair
+  if (old_idx_hist == Hist_EE.size-1 and comm.Get_rank() == 0):
+    idx_shift_Na = np.random.randint(0,NIonsPairs)
+    idx_test_Na  = i_atom_Na_i + idx_shift_Na 
+    idx_shift_Cl = np.random.randint(0,NIonsPairs)
+    idx_test_Cl  = i_atom_Cl_i + idx_shift_Cl
+
+
+  idx_test_Na = comm.bcast(idx_test_Na,root=0)
+  idx_test_Cl = comm.bcast(idx_test_Cl,root=0)
+  flag = lmp.set_variable("idx_test_Na",idx_test_Na)
+  flag = lmp.set_variable("idx_test_Cl",idx_test_Cl)
+  
+  # Processor that has rank zero decides which direction to move
+  # and broadcasts to everybody else
+  if (comm.Get_rank() == 0):
+    rand_num = np.random.rand()
+    if (rand_num < 0.5):
+      idx_test_dir = 1
+    else:
+      idx_test_dir = -1
+
+  idx_test_dir = comm.bcast(idx_test_dir,root=0)
+
+  # If the attempted transition is going out of limits,
+  # reject
+  if ((old_idx_hist == 0 and idx_test_dir == -1) or \
+      (old_idx_hist == Hist_EE.size-1 and  idx_test_dir == 1)):
+      Hist_WL.penalize(old_idx_hist)  
+  else:
+      # Make the temporary changes to the charge values
+      # Note that these changes have to be reverted if the
+      # attempted transition gets rejected
+      delta_q      = idx_test_dir * delta_q_test
+      q_test_Na    = q_current + delta_q
+      q_test_Cl    = -q_current - delta_q
+      new_idx_hist = Hist_EE.idx_hist(q_test_Na)
+
+      comm.Barrier()
+      flag = lmp.set_variable("q_test_Na", q_test_Na)
+      flag = lmp.set_variable("q_test_Cl", q_test_Cl)
+      lmp.command("set atom ${idx_test_Na} charge ${q_test_Na}")
+      lmp.command("set atom ${idx_test_Cl} charge ${q_test_Cl}")
+
+      # Get the energy by doing a false run
+      lmp.command("run 0")
+      e_new = lmp.extract_compute("thermo_pe",0,0)
+
+      # Processor that has rank zero decides to either
+      # accept or reject the transition and broadcasts
+      # the decision to others
+      if (comm.Get_rank() == 0):
+        delta_e = (e_new - e_old)
+        delta_w = Hist_WL.wts[new_idx_hist] - Hist_WL.wts[old_idx_hist]
+        arg     = np.exp(-Beta * delta_e + delta_w)
+        accept = (arg > np.random.rand())
+
+      accept = comm.bcast(accept,root=0)
+
+      if (accept):
+        Hist_WL.penalize(new_idx_hist)
+        q_current = q_test_Na
       else:
-         idx_test_dir = -1
-   idx_test_dir = comm.bcast(idx_test_dir,root=0)
-
-   # If the attempted transition is going out of limits,
-   # reject
-   if ((old_idx_hist == 0 and idx_test_dir == -1) or \
-       (old_idx_hist == Hist_EE.size-1 and  idx_test_dir == 1)):
-       Hist_WL.penalize(old_idx_hist)  
-   else:
-       # Make the temporary changes to the charge values
-       # Note that these changes have to be reverted if the
-       # attempted transition gets rejected
-       delta_q   = idx_test_dir * delta_q_test
-       q_test_Na = q_current + delta_q
-       q_test_Cl = -q_current - delta_q
-       new_idx_hist = Hist_EE.idx_hist(q_test_Na)
-
-       comm.Barrier()
-       flag = lmp.set_variable("q_test_Na", q_test_Na)
-       flag = lmp.set_variable("q_test_Cl", q_test_Cl)
-       lmp.command("set atom ${idx_test_Na} charge ${q_test_Na}")
-       lmp.command("set atom ${idx_test_Cl} charge ${q_test_Cl}")
-
-       # Get the energy by doing a false run
-       lmp.command("run 0")
-       e_new = lmp.extract_compute("thermo_pe",0,0)
-
-       # Processor that has rank zero decides to either
-       # accept or reject the transition and broadcasts
-       # the decision to others
-       if (comm.Get_rank() == 0):
-          delta_e = (e_new - e_old)
-          arg = np.exp(-Beta * delta_e + Hist_WL.wts[new_idx_hist] - \
-                Hist_WL.wts[old_idx_hist])
-          accept = (arg > np.random.rand())
-       accept = comm.bcast(accept,root=0)
-
-       if (accept):
-          Hist_WL.penalize(new_idx_hist)
-          q_current = q_test_Na
-       else:
-          Hist_WL.penalize(old_idx_hist)
-          q_test_Na = q_current
-          q_test_Cl = -q_current
-          comm.Barrier()
-          flag = lmp.set_variable("q_test_Na", q_test_Na)
-          flag = lmp.set_variable("q_test_Cl", q_test_Cl)
-          lmp.command("set atom ${idx_test_Na} charge ${q_test_Na}")
-          lmp.command("set atom ${idx_test_Cl} charge ${q_test_Cl}")
-          # Need this false run to update the forces correctly
-          lmp.command("run 0")
+        Hist_WL.penalize(old_idx_hist)
+        q_test_Na = q_current
+        q_test_Cl = -q_current
+        comm.Barrier()
+        flag = lmp.set_variable("q_test_Na", q_test_Na)
+        flag = lmp.set_variable("q_test_Cl", q_test_Cl)
+        lmp.command("set atom ${idx_test_Na} charge ${q_test_Na}")
+        lmp.command("set atom ${idx_test_Cl} charge ${q_test_Cl}")
+        # Need this false run to update the forces correctly
+        lmp.command("run 0")
 
 ee_hist_WL.close()
