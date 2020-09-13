@@ -36,10 +36,10 @@ desired_inc = 0.1
 EEHist      = Histogram(charge_min, charge_max, desired_inc)
 
 # WL info
-lnf_initial = 1.0    # initial lnf
+lnf_initial = 1.e-3    # initial lnf
 lnf_scaler  = 0.5    
 ratio_crit  = 0.8    
-lnf_crit    = 1.e-4  
+lnf_crit    = 1.e-5  
 WLHist      = WL_histogram(EEHist,lnf_initial,lnf_scaler,ratio_crit,lnf_crit)
 
 # TMMC Initialization
@@ -57,8 +57,8 @@ i_atom_Cl_i   = 6461
 i_atom_Cl_f   = 6518
 natoms        = 6518
 NIonsPairs    = 58
-time_equil    = 10 # length of equilibration run in fs (no sub-ens change attempts during this time)
-time_sub_sim  = 20 # each sube-ens is simulated for this many fs between sub-ens changee attempts
+time_equil    = 5000 # length of equilibration run in fs (no sub-ens change attempts during this time)
+time_sub_sim  = 20   # each sube-ens is simulated for this many fs between sub-ens changee attempts
 Temp          = 298.0
 DataFileName  = "tip4p05.data"
 
