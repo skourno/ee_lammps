@@ -1,0 +1,15 @@
+# input_eeLammps.txt template
+
+ee_histo        0.0 1.0 0.1
+use_wl          yes 0.1 0.5 0.8 1.e-4
+write_wl        5000 dos_WL.dat
+use_tmmc        yes 
+write_tmmc      5000 dos_TM.dat
+iseed           215728
+read_data       tip4p05.data
+sim_time        5000 1000000 20
+set_IonPair_tp  Na Cl
+set_temp        298.15 # K
+init_dos        ./indos.dat
+write           all 5000 
+
