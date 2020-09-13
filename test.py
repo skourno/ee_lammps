@@ -142,7 +142,7 @@ for i_loop in range(100000):
       # the decision to others
       if (comm.Get_rank() == 0):
         delta_e = (e_new - e_old)
-        delta_w = WLHist.wts(new_idx_hist) - WLHist.wts(old_idx_hist)
+        delta_w = WLHist(new_idx_hist) - WLHist(old_idx_hist)
         arg     = np.exp(-Beta * delta_e + delta_w)
         acceptTrans = (arg > np.random.rand())
 
