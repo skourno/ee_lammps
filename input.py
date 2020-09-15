@@ -11,7 +11,7 @@ from Hist import Histogram
 # message will simply be a 'No error' string
 #
 # -------------------------------------------------------------
-class input_data:
+class read_input:
 	def __init__(self,InputFile):
 
 		NLinesRead = 0
@@ -30,6 +30,31 @@ class input_data:
 		self.write_tmmc_parsed   = False
 		self.write_dump_parsed   = False
 		self.roam_ee_with_parsed = False
+
+		self.boundary_min        = 0.0
+		self.boundary_max        = 0.0
+		self.desired_inc         = 0.0
+		self.lnf                 = 0.0
+		self.lnf_scaler          = 0.0        
+		self.ratio_crit          = 0.0        
+		self.lnf_crit            = 0.0      
+		self.use_wl              = False
+		self.use_tmmc            = False
+		self.iseed               = 0
+		self.DataFile            = ''
+		self.time_equil          = 0.0
+		self.time_prod           = 0.0
+		self.time_sub_sim        = 0.0
+		self.cationName          = ''
+		self.anionName           = ''
+		self.temp                = 298.15
+		self.outFile_wl          = ''
+		self.wstep_wl            = 0
+		self.outFile_tmmc        = ''
+		self.wstep_tmmc          = 0
+		self.outFile_dump        = ''
+		self.wstep_dump          = 0
+		self.ee_method           = ''
 
 		self.NoErrorMessage      = 'No error'
 
@@ -101,7 +126,6 @@ class input_data:
 
 					sys.exit()
 
-  
   # ----------------------------------
 	def ee_histo(self,lineArgs):
 		if (len(lineArgs) != 4):
