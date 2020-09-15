@@ -1,15 +1,16 @@
 # input_eeLammps.txt template
 
-ee_histo        0.0 1.0 0.1
-use_wl          yes 0.1 0.5 0.8 1.e-4
-write_wl        5000 dos_WL.dat
-use_tmmc        yes 
-write_tmmc      5000 dos_TM.dat
-iseed           215728
-read_data       tip4p05.data
-sim_time        5000 1000000 20
-set_IonPair_tp  Na Cl
-set_temp        298.15 # K
-init_dos        ./indos.dat
-write           all 5000 
+ee_histo        0.0 1.0 0.1                  # min, max, desired increment
+use_wl          yes 0.1 0.5 0.8 1.e-4        # yes/no, if yes then lnf, lnf_scaler, critical flatness, critical lnf
+write_wl        5000 dos_WL.dat              # write_step, outputFile
+use_tmmc        yes                          # yes/no
+write_tmmc      5000 dos_TM.dat              # write_step, outputFile
+roam_ee_with    wl                           # wl, tmmc or wl_and_tmmc
+iseed           215728                       # seed of the lammps simulation
+read_data       tip4p05.data                 # lammps data file with topology and initial config
+sim_time        5000 1000000 20              # time_equil, time_prod, MD time between sub-ens change attempts
+tp_IonPair      Na Cl                        # names of the ions in the test ion pair (cation,anion)
+set_temp        298.15 # K                   # simulation temperature
+init_dos        indos.dat                    # density of states initial guess
+write_dump      5000 benavides_tip4p.dump    # write_dump time step, dump output file
 
