@@ -11,52 +11,60 @@ from Hist import Histogram
 # message will simply be a 'No error' string
 #
 # -------------------------------------------------------------
-class read_input:
+class input_data:
+
+	# boolean flags that are changed to true if the corresponding entry was found in the input
+	ee_histo_parsed     = False
+	use_wl_parsed       = False
+	use_tmmc_parsed     = False
+	iseed_parsed        = False
+	read_data_parsed    = False
+	sim_time_parsed     = False
+	tp_IonPair_parsed   = False
+	set_temp_parsed     = False
+	init_dos_parsed     = False
+	write_wl_parsed     = False
+	write_tmmc_parsed   = False
+	write_dump_parsed   = False
+	roam_ee_with_parsed = False
+
+	# info that can be read from the input file 
+	# (in comment the corresponding keyword of the input)
+	boundary_min        = 0.0    # ee_histo
+	boundary_max        = 0.0    # ee_histo
+	desired_inc         = 0.0    # ee_histo
+	lnf                 = 0.0    # use_wl
+	lnf_scaler          = 0.0    # use_wl 
+	ratio_crit          = 0.0    # use_wl    
+	lnf_crit            = 0.0    # use_wl  
+	use_wl_bool         = False  # use_wl
+	use_tmmc_bool       = False  # use_tmmc
+	iseed               = 0      # iseed
+	DataFile            = ''     # read_data
+	time_equil          = 0.0    # sim_time    
+	time_prod           = 0.0    # sim_time
+	time_sub_sim        = 0.0    # sim_time
+	cationName          = ''     # tp_IonPair
+	anionName           = ''     # tp_IonPair
+	iTypeTestCat        = 0      # tp_IonPair
+	iTypeTestAn         = 0      # tp_IonPair
+	Temp                = 298.15 # set_temp
+	outFile_wl          = ''     # write_Wl
+	wstep_wl            = 0      # write_Wl
+	outFile_tmmc        = ''     # write_tmmc
+	wstep_tmmc          = 0      # write_tmmc
+	outFile_dump        = ''     # write_dump
+	wstep_dump          = 0      # write_dump
+	ee_method           = ''     # roam_ee_with
+
+	NoErrorMessage      = 'No error' # no error flag
+
+	# ----------------------------------------------------------------
+	# Initialize function
+	# ----------------------------------------------------------------
 	def __init__(self,InputFile):
 
 		NLinesRead = 0
-
-		# boolean flags that are changed to true if the corresponding entry was found in the input
-		self.ee_histo_parsed     = False
-		self.use_wl_parsed       = False
-		self.use_tmmc_parsed     = False
-		self.iseed_parsed        = False
-		self.read_data_parsed    = False
-		self.sim_time_parsed     = False
-		self.tp_IonPair_parsed   = False
-		self.set_temp_parsed     = False
-		self.init_dos_parsed     = False
-		self.write_wl_parsed     = False
-		self.write_tmmc_parsed   = False
-		self.write_dump_parsed   = False
-		self.roam_ee_with_parsed = False
-
-		self.boundary_min        = 0.0
-		self.boundary_max        = 0.0
-		self.desired_inc         = 0.0
-		self.lnf                 = 0.0
-		self.lnf_scaler          = 0.0        
-		self.ratio_crit          = 0.0        
-		self.lnf_crit            = 0.0      
-		self.use_wl              = False
-		self.use_tmmc            = False
-		self.iseed               = 0
-		self.DataFile            = ''
-		self.time_equil          = 0.0
-		self.time_prod           = 0.0
-		self.time_sub_sim        = 0.0
-		self.cationName          = ''
-		self.anionName           = ''
-		self.temp                = 298.15
-		self.outFile_wl          = ''
-		self.wstep_wl            = 0
-		self.outFile_tmmc        = ''
-		self.wstep_tmmc          = 0
-		self.outFile_dump        = ''
-		self.wstep_dump          = 0
-		self.ee_method           = ''
-
-		self.NoErrorMessage      = 'No error'
 
 		with open(InputFile) as input:
 			for line in input:
@@ -72,9 +80,6 @@ class read_input:
 
 				line        = line.rstrip()
 				lineArgs    = line.split()
-
-				#print(lineArgs)
-				#print('\n')
 
 				if  (lineArgs[0] == 'ee_histo' ):
 					errorMessage           = self.ee_histo(lineArgs)
@@ -191,17 +196,19 @@ class read_input:
 			return 'sim_time: Argument mismatch. Specify: time_equil, time_prod, time_sub_sim' # error
 		elif(float(lineArgs[1]) < 0 or float(lineArgs[2]) < 0 or float(lineArgs[3]) < 0):
 			return 'sim time: Simulation time cannot be negative' # error
-		self.time_equil   = float(lineArgs[1])
-		self.time_prod    = float(lineArgs[2])
-		self.time_sub_sim = float(lineArgs[3])
+		self.time_equil   = int(lineArgs[1])
+		self.time_prod    = int(lineArgs[2])
+		self.time_sub_sim = int(lineArgs[3])
 		return self.NoErrorMessage
 
 	# ----------------------------------
 	def tp_IonPair(self,lineArgs):
-		if  (len(lineArgs) != 3):
-			return 'tp_IonPair: Argument mismatch. Specify: cationName, anionName' # error
-		self.cationName   = str(lineArgs[1])
-		self.anionName    = str(lineArgs[2])
+		if  (len(lineArgs) != 5):
+			return 'tp_IonPair: Argument mismatch. Specify: cationName, iTypeCat, anionName, iTypeAn' # error
+		self.iTypeTestCat = int(lineArgs[1])
+		self.cationName   = str(lineArgs[2])
+		self.iTypeTestAn  = int(lineArgs[3])
+		self.anionName    = str(lineArgs[4])
 		return self.NoErrorMessage
 
 	# ----------------------------------
@@ -210,7 +217,7 @@ class read_input:
 			return 'set_temp: Argument mismatch. Only specify the simulation temperature' # error
 		elif(float(lineArgs[1]) < 0):
 			return 'set_temp: Negative temperature'  # error
-		self.temp = float(lineArgs[1])
+		self.Temp = float(lineArgs[1])
 		return self.NoErrorMessage
 
 	# ----------------------------------
