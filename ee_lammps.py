@@ -26,51 +26,69 @@ from Hist           import Histogram
 from WL             import WL_histogram
 from tmmc           import TMMC_histogram
 from lammps         import lammps
-from sim_lmp        import run_lammps_sim, setup_tip4p_with_Ions
+from sim_lmp        import run_lammps_sim, setup_tip4p_with_Ions, set_lammps_dump
 from input          import input_data
 from test_particle  import test_IonPair
 from simData        import simData
 
-comm          = MPI.COMM_WORLD            # initialize mpi
 
 InputFilePath = sys.argv[1]               # The name and path to the input file is given as an argument
 inData        = input_data(InputFilePath) # Read the input file
 sim           = simData(inData)           # Pass the input to a system info host
 
+comm          = MPI.COMM_WORLD            # initialize mpi
 lmp           = sim.init_lammps_Sim()     # Initialize the simulation
 
-# Import the configuration as specified in the input
+# Import the configuration as specified in the simData
 sim.import_config(lmp)            
 
 # setup a tip4p with ions simulation        
 setup_tip4p_with_Ions(lmp, sim.Temp)
 
-run_lammps_sim(lmp,sim.time_equil)    # run an initial equilibration run
+comm.Barrier()
+run_lammps_sim(lmp,sim.NSteps_equil)    # run an initial equilibration run
+
+if (inData.write_dump_parsed):
+  # set the dump file print info
+  set_lammps_dump(lmp, inData.wstep_dump, inData.outFile_dump)
 
 # setup an ion pair as the test particles
-testIons      = test_IonPair(inData.cationName, inData.iTypeTestCat,\
+testPart      = test_IonPair(inData.cationName, inData.iTypeTestCat,\
                              inData.anionName,  inData.iTypeTestAn, \
                              sim, lmp) 
 #accTrans      = False
 #
-## initialize the following auxiliary variables
+# initialize the following auxiliary variables
 #idx_test_dir = 0 # index that decides the direction
 #idx_shift_Na = 0 # index to help with choosing a new Na test particle
 #idx_shift_Cl = 0 # index to help with choosing a new Cl test particle
 #
 #
-#for i_loop in range(100000):
-#  if (np.mod(i_loop,200) == 0 and comm.Get_rank() == 0):
-#    tag = "Simulation time: %8d fs" %(time_equil + i_loop*time_sub_sim)
-#    WLHist.write(tag, WL_FILE_out)
-#
-#    TMHist.update_TMMC_weights()     # compute the current estimate of TMMC for the weights
-#    TMHist.write(tag, TM_FILE_out) 
-#  
-#  comm.Barrier()
-#  lmp.command("run ${time_sub_sim}")
-#
-#  e_old        = lmp.extract_compute("thermo_pe",0,0)
+NStepsSE  = sim.NSteps_subEns
+NStepsP   = sim.NSteps_prod
+NLoops    = int(NStepsP / NStepsSE)
+NStepsRan = 0 + sim.NSteps_equil
+
+for i_loop in range(NLoops):
+  # update the TMMC Histogram
+  if (sim.use_tmmc_bool and np.mod(NStepsRan,sim.NStepsUpdateTM)):
+    sim.TMHist.update_TMMC_weights()
+
+  timeStamp = "Simulation step: %8d" %(NStepsRan)
+  if (sim.write_wl   and np.mod(NStepsRan,sim.NWStepWL) == 0 and comm.Get_rank() == 0):
+    sim.WLHist.write(timeStamp, sim.WL_FILE_out)
+  
+  if (sim.write_tmmc and np.mod(NStepsRan,sim.NWStepTM) == 0 and comm.Get_rank() == 0):
+    tag = "Simulation step: %8d" %(NStepsRan)
+    sim.TMHist.write(timeStamp, sim.TM_FILE_out) 
+  
+  comm.Barrier()
+  run_lammps_sim(lmp,NStepsSE)
+
+  pe_old   = lmp.extract_compute("thermo_pe",0,0)
+  iSub_old = 0
+
+  sys.exit("executed")
 #  old_idx_hist = EEHist.idx_of(q_current)
 #
 #  # If all ion pairs have full fractional charges, 
