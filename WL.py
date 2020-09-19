@@ -59,8 +59,12 @@ class WL_histogram(Histogram):
     file.write("#\n")
     file.write("#   subEnsCoord   devFromMeanVisits      DOS\n")
     file.write("#\n")
-    mean_visits = np.mean(self.NVisits)
 
+    dos         = np.zeros(self.NSubs,np.double)
+    dosMax      = np.amax(self.wts[:])
+    dos         = self.wts[:] - dosMax
+
+    mean_visits = np.mean(self.NVisits)
     if (mean_visits == 0.0):
       pass
     else:
@@ -69,7 +73,7 @@ class WL_histogram(Histogram):
     for i_sub in range(self.NSubs):
       subEnsCoord = self.min + i_sub*self.width_bin
       file.write('%12.3f %16.3f %16.5f \n' \
-               %(subEnsCoord, dev_from_mean[i_sub], self(i_sub)))
+               %(subEnsCoord, dev_from_mean[i_sub], dos[i_sub]))
 
     file.write("\n")
     file.flush()
