@@ -19,7 +19,7 @@ class input_data:
 	use_tmmc_parsed     = False
 	iseed_parsed        = False
 	read_data_parsed    = False
-	sim_time_parsed     = False
+	sim_steps_parsed    = False
 	tp_IonPair_parsed   = False
 	set_temp_parsed     = False
 	init_dos_parsed     = False
@@ -39,11 +39,12 @@ class input_data:
 	lnf_crit            = 0.0    # use_wl  
 	use_wl_bool         = False  # use_wl
 	use_tmmc_bool       = False  # use_tmmc
+	NStepsUpdateTM      = 0      # use_tmmc
 	iseed               = 0      # iseed
 	DataFile            = ''     # read_data
-	time_equil          = 0.0    # sim_time    
-	time_prod           = 0.0    # sim_time
-	time_sub_sim        = 0.0    # sim_time
+	NSteps_equil        = 0      # sim_steps    
+	NSteps_prod         = 0      # sim_steps
+	NSteps_subEns       = 0      # sim_steps
 	cationName          = ''     # tp_IonPair
 	anionName           = ''     # tp_IonPair
 	iTypeTestCat        = 0      # tp_IonPair
@@ -88,6 +89,7 @@ class input_data:
 					errorMessage           = self.use_wl(lineArgs)
 					self.use_wl_parsed     = True
 				elif(lineArgs[0] == 'use_tmmc' ):
+					errorMessage           = self.use_tmmc(lineArgs)
 					self.use_tmmc_parsed   = True
 				elif(lineArgs[0] == 'iseed'    ):
 					errorMessage           = self.read_iseed(lineArgs)
@@ -95,9 +97,9 @@ class input_data:
 				elif(lineArgs[0] == 'read_data'):
 					errorMessage           = self.read_data(lineArgs)
 					self.read_data_parsed  = True
-				elif(lineArgs[0] == 'sim_time' ):
-					errorMessage           = self.sim_time(lineArgs)
-					self.sim_time_parsed   = True				
+				elif(lineArgs[0] == 'sim_steps' ):
+					errorMessage           = self.sim_steps(lineArgs)
+					self.sim_steps_parsed  = True				
 				elif(lineArgs[0] == 'tp_IonPair'):
 					errorMessage           = self.tp_IonPair(lineArgs)
 					self.tp_IonPair_parsed = True		
@@ -152,26 +154,29 @@ class input_data:
 			if (len(lineArgs) != 6):
 				return 'use_wl: Argument mismatch. Specify(after yes): lnf, lnf_scaler, ratio_crit, lnf_crit' # error
 
-			self.use_wl      = True
+			self.use_wl_bool = True
 			self.lnf         = float(lineArgs[2])
 			self.lnf_scaler  = float(lineArgs[3])  
 			self.ratio_crit  = float(lineArgs[4])  
 			self.lnf_crit    = float(lineArgs[5]) 
 		elif(lineArgs[1] == 'no' ):
-			self.use_wl = False
+			self.use_wl_bool = False
 
 		return self.NoErrorMessage 
 
 	# ----------------------------------
 	def use_tmmc(self,lineArgs):
-		if   (len(lineArgs) != 2):
-			return 'use_tmmc: Argument mismatch. Please only choose yes/no' # error
+		if   (len(lineArgs) < 2):
+			return 'use_tmmc: Called without arguments. Please choose yes/no' # error
 		elif (not self.ee_histo_parsed):
 			return 'use_tmmc: Cant find an EE histogram. Define one using ee_histo' # error	
 		
 		self.use_tmmc = False
 		if (lineArgs[1] == 'yes'):
-			self.use_tmmc = True
+			if   (len(lineArgs) != 3):
+				return 'use_tmmc: Argument mismatch. Please choose yes/no' # error
+			self.use_tmmc_bool  = True
+			self.NStepsUpdateTM = int(lineArgs[2])
 
 		return self.NoErrorMessage
 
@@ -191,14 +196,14 @@ class input_data:
 		return self.NoErrorMessage
 
 	# ----------------------------------
-	def sim_time(self,lineArgs):
+	def sim_steps(self,lineArgs):
 		if  (len(lineArgs) != 4):
-			return 'sim_time: Argument mismatch. Specify: time_equil, time_prod, time_sub_sim' # error
+			return 'sim_steps: Argument mismatch. Specify: NSteps_equil, NSteps_prod, NSteps_subEns' # error
 		elif(float(lineArgs[1]) < 0 or float(lineArgs[2]) < 0 or float(lineArgs[3]) < 0):
-			return 'sim time: Simulation time cannot be negative' # error
-		self.time_equil   = int(lineArgs[1])
-		self.time_prod    = int(lineArgs[2])
-		self.time_sub_sim = int(lineArgs[3])
+			return 'sim steps: Simulation steps cannot be negative' # error
+		self.NSteps_equil   = int(lineArgs[1])
+		self.NSteps_prod    = int(lineArgs[2])
+		self.NSteps_subEns  = int(lineArgs[3])
 		return self.NoErrorMessage
 
 	# ----------------------------------
@@ -267,8 +272,8 @@ class input_data:
 		elif (not self.use_wl_parsed):
 			return 'write_wl: Cant find a WL histogram. Define one using use_wl' # error
 
-		self.wstep_wl   = lineArgs[1]
-		self.outFile_wl = lineArgs[2]
+		self.wstep_wl   = int(lineArgs[1])
+		self.outFile_wl =     lineArgs[2]
 
 		return self.NoErrorMessage
 
@@ -280,8 +285,8 @@ class input_data:
 		elif (not self.use_tmmc_parsed):
 			return 'write_tmmc: Cant find a TMMC histogram. Define one using use_tmmc' # error
 
-		self.wstep_tmmc   = lineArgs[1]
-		self.outFile_tmmc = lineArgs[2]
+		self.wstep_tmmc   = int(lineArgs[1])
+		self.outFile_tmmc =     lineArgs[2]
 
 		return self.NoErrorMessage
 
@@ -290,8 +295,8 @@ class input_data:
 		if   (len(lineArgs) != 3):
 			return 'write_dump: Argument mismatch. Specify: write_step(fs), fileName' # error
 
-		self.wstep_dump   = lineArgs[1]
-		self.outFile_dump = lineArgs[2]
+		self.wstep_dump   = int(lineArgs[1])
+		self.outFile_dump =     lineArgs[2]
 
 		return self.NoErrorMessage
 
