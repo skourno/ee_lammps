@@ -56,22 +56,32 @@ if (inData.write_dump_parsed):
 testPart      = test_IonPair(inData.cationName, inData.iTypeTestCat,\
                              inData.anionName,  inData.iTypeTestAn, \
                              sim, lmp) 
-#accTrans      = False
-#
+
 # initialize the following auxiliary variables
-#idx_test_dir = 0 # index that decides the direction
-#idx_shift_Na = 0 # index to help with choosing a new Na test particle
-#idx_shift_Cl = 0 # index to help with choosing a new Cl test particle
-#
-#
+accTrans     = False
+idx_test_dir = 0      # index that decides the direction
+
 NStepsSE  = sim.NSteps_subEns
 NStepsP   = sim.NSteps_prod
 NLoops    = int(NStepsP / NStepsSE)
-NStepsRan = 0 + sim.NSteps_equil
+NStepsRan = 0
+
+wl_used   = sim.use_wl_bool
+tmmc_used = sim.use_tmmc_bool
+NSubs     = sim.EEHist.NBins
+
+if (comm.Get_rank() == 0):
+  print("----------------------------------------------------------")
+  print(" > Starting the Expanded Ensemble exploration ...")
+  print("\n")
+  print("    MD steps - Sub index - EE coord - PE (kcal/mol)")
+  print("\n")
+
 
 for i_loop in range(NLoops):
+
   # update the TMMC Histogram
-  if (sim.use_tmmc_bool and np.mod(NStepsRan,sim.NStepsUpdateTM)):
+  if (tmmc_used and np.mod(NStepsRan,sim.NStepsUpdateTM)):
     sim.TMHist.update_TMMC_weights()
 
   timeStamp = "Simulation step: %8d" %(NStepsRan)
@@ -84,97 +94,91 @@ for i_loop in range(NLoops):
   
   comm.Barrier()
   run_lammps_sim(lmp,NStepsSE)
+  NStepsRan += NStepsSE
 
   pe_old   = lmp.extract_compute("thermo_pe",0,0)
-  iSub_old = 0
+  iSub_old = sim.EEHist.idx_of(testPart.ee_coord())
 
-  sys.exit("executed")
-#  old_idx_hist = EEHist.idx_of(q_current)
-#
-#  # If all ion pairs have full fractional charges, 
-#  # randomly select ions to be the test pair
-#  if (old_idx_hist == EEHist.NBins-1 and comm.Get_rank() == 0):
-#    idx_shift_Na = np.random.randint(0,NIonsPairs)
-#    idx_testCat  = i_atom_Na_i + idx_shift_Na 
-#    idx_shift_Cl = np.random.randint(0,NIonsPairs)
-#    idx_testAn  = i_atom_Cl_i + idx_shift_Cl
-#
-#  idx_testCat = comm.bcast(idx_testCat,root=0)
-#  idx_testAn = comm.bcast(idx_testAn,root=0)
-#  flag = lmp.set_variable("idx_testCat",idx_testCat)
-#  flag = lmp.set_variable("idx_testAn",idx_testAn)
-#  
-#  # Processor that has rank zero decides which direction to move
-#  # and broadcasts to everybody else
-#  if (comm.Get_rank() == 0):
-#    rand_num = np.random.rand()
-#    if (rand_num < 0.5):
-#      idx_test_dir = +1
-#    else:
-#      idx_test_dir = -1
-#
-#  idx_test_dir = comm.bcast(idx_test_dir,root=0)
-#
-#  # If the attempted transition is going out of limits,
-#  # reject
-#  if ((old_idx_hist == 0 and idx_test_dir == -1) or \
-#      (old_idx_hist == EEHist.NBins-1 and  idx_test_dir == 1)):
-#      WLHist.penalize(old_idx_hist)  
-#
-#      # update the TMMC collection matrix
-#      trans_prob = 0.0 
-#      TMHist.update_collection_matrix(old_idx_hist, idx_test_dir, trans_prob)
-#  else:
-#      # Make the temporary changes to the charge values
-#      # Note that these changes have to be reverted if the
-#      # attempted transition gets rejected
-#      delta_q      = idx_test_dir * delta_q_test
-#      q_testCat    = q_current + delta_q
-#      q_testAn     = -q_current - delta_q
-#      new_idx_hist = EEHist.idx_of(q_testCat)
-#
-#      comm.Barrier()
-#      flag = lmp.set_variable("q_testCat", q_testCat)
-#      flag = lmp.set_variable("q_testAn", q_testAn)
-#      lmp.command("set atom ${idx_testCat} charge ${q_testCat}")
-#      lmp.command("set atom ${idx_testAn} charge ${q_testAn}")
-#
-#      # Get the energy by doing a false run
-#      lmp.command("run 0")
-#      e_new = lmp.extract_compute("thermo_pe",0,0)
-#
-#      # compute the trans_probability
-#      delta_e    = (e_new - e_old)
-#      expDE      = np.exp(-Beta * delta_e)
-#      trans_prob = np.minimum(expDE,1.0)
-#
-#      # update the collection matrix of TMMC
-#      TMHist.update_collection_matrix(old_idx_hist, idx_test_dir, trans_prob)
-#
-#      # Processor that has rank zero decides to either
-#      # accept or reject the transition and broadcasts
-#      # the decision to others
-#      if (comm.Get_rank() == 0):
-#        delta_w     = WLHist(new_idx_hist) - WLHist(old_idx_hist)
-#        arg         = np.exp(-Beta * delta_e + delta_w)
-#        acceptTrans = (arg > np.random.rand())
-#
-#      acceptTrans = comm.bcast(acceptTrans,root=0)
-#
-#      if (acceptTrans):
-#        WLHist.penalize(new_idx_hist)
-#        q_current = q_testCat
-#      else:
-#        WLHist.penalize(old_idx_hist)
-#        q_testCat = q_current
-#        q_testAn = -q_current
-#        comm.Barrier()
-#        flag = lmp.set_variable("q_testCat", q_testCat)
-#        flag = lmp.set_variable("q_testAn", q_testAn)
-#        lmp.command("set atom ${idx_testCat} charge ${q_testCat}")
-#        lmp.command("set atom ${idx_testAn} charge ${q_testAn}")
-#        # Need this false run to update the forces correctly
-#        lmp.command("run 0")
+  if (comm.Get_rank() == 0):
+    print("%10d %10d %10.2f %13.1f" %(NStepsRan+sim.NSteps_equil, iSub_old, testPart.charge, pe_old))
 
-#WL_FILE_out.close()
+
+  #if (testPart.Type =='Ion Pair'): 
+  #  charge = testPart.ee_coord()
+  #  if (charge == testPart.fullCharge): 
+  #    # fully charged and we can suffle the test particles
+  #    testPart.shuffle_testPart(lmp,comm)
+
+  # Processor that has rank zero decides which direction to move
+  # and broadcasts to everybody else
+  if (comm.Get_rank() == 0):
+    rand_num = np.random.rand()
+    if (rand_num < 0.5):
+      idx_test_dir = +1
+    else:
+      idx_test_dir = -1
+  idx_test_dir = comm.bcast(idx_test_dir,root=0)
+
+  # If the attempted transition is going out of limits, reject it
+  if ((iSub_old == 0       and  idx_test_dir == -1) or \
+      (iSub_old == NSubs-1 and  idx_test_dir ==  1)):
+    
+    if (wl_used):
+      sim.WLHist.penalize(iSub_old)  
+    
+    if (tmmc_used):
+      trans_prob = 0.0 
+      sim.TMHist.update_collection_matrix(iSub_old, idx_test_dir, trans_prob)
+  else:
+    # Make the temporary changes to the test particles
+    # Note that these changes have to be reverted if the
+    # attempted transition gets rejected
+    testPart.subEns_change(lmp,idx_test_dir)
+    iSub_new  = sim.EEHist.idx_of(testPart.ee_coord())
+
+    # Get the energy by doing a false run
+    comm.Barrier()
+    lmp.command("run 0")
+    pe_new = lmp.extract_compute("thermo_pe",0,0)
+    
+    # compute the trans_probability
+    delta_pe    = (pe_new - pe_old)
+    expDE       = np.exp(-sim.Beta * delta_pe)
+    trans_prob  = np.minimum(expDE,1.0)
+    
+    if (tmmc_used):
+      # update the collection matrix of TMMC
+      sim.TMHist.update_collection_matrix(iSub_old, idx_test_dir, trans_prob)
+    
+    # Processor that has rank zero decides to either
+    # accept or reject the transition and broadcasts
+    # the decision to others
+
+    if (comm.Get_rank() == 0):
+      delta_w     = sim.WLHist(iSub_new) - sim.WLHist(iSub_old)
+      arg         = np.exp(-sim.Beta * delta_pe + delta_w)
+      acceptTrans = (arg > np.random.rand())
+    
+    acceptTrans = comm.bcast(acceptTrans,root=0)
+
+    if (acceptTrans):
+      if (wl_used):
+        sim.WLHist.penalize(iSub_new)
+    else:
+      if (wl_used):
+        sim.WLHist.penalize(iSub_old)
+
+      # change back to the previous sub ens
+      testPart.subEns_change(lmp,-idx_test_dir) 
+
+      # Need this false run to update the forces correctly
+      comm.Barrier()
+      lmp.command("run 0")
+
+
+if (sim.write_wl):
+  sim.WL_FILE_out.close()
+
+if (sim.write_tmmc):
+  sim.TM_FILE_out.close()
 

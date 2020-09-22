@@ -48,14 +48,14 @@ def setup_tip4p_with_Ions(lmp, Temp):
 # run a simulation with length 'NStepsRun' in number of timesteps
 #------------------------------------------------------------
 def run_lammps_sim(lmp,NStepsRun):
-	lmp.command("variable NStepsRun equal 0")
+	lmp.command("variable NStepsRun string 100")
 	flag = lmp.set_variable("NStepsRun",NStepsRun)
 	lmp.command("run ${NStepsRun}")
 
 #------------------------------------------------------------
 def set_lammps_dump(lmp,NStepDump=200,DumpFileName="dump.atom"):
 	lmp.command("variable DumpFileName  string dump.atom")
-	lmp.command("variable NStepDump     equal  200      ")
+	lmp.command("variable NStepDump     string 200      ")
 
 	flag = lmp.set_variable("DumpFileName",DumpFileName)
 	flag = lmp.set_variable("NStepDump",   NStepDump)

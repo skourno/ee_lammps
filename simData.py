@@ -8,6 +8,7 @@ from lammps  import lammps
 from tmmc    import TMMC_histogram
 from WL      import WL_histogram
 
+import numpy as np
 
 
 # ----------------------------------------------
@@ -63,7 +64,7 @@ class simData():
 			wts_init = inData.dos_init
 		else:
 			# initialize to zero array
-			wts_init = np.zeros(EEHist.NBins,np.double)
+			wts_init = np.zeros(self.EEHist.NBins,np.double)
 
 		# set the initial weights of the simulation
 		self.EEHist.binValue = wts_init

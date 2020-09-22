@@ -80,6 +80,10 @@ class TMMC_histogram(Histogram):
       self.TM[i_sub,0]  =  self.CM[i_sub  ,2] / np.sum(self.CM[i_sub  ,:]) # trans i_sub -> i_sub+1
 
       # compute the weight of i_sub+1
+      if (self.TM[i_sub,0] == 0):
+        self.allSubsLogged = False # adresses a small bug appearing when not all directions havent been logged
+        return
+
       self.wts[i_sub+1] =  self.wts[i_sub] + np.log( self.TM[i_sub,1] / self.TM[i_sub,0] )
 
 
