@@ -4,19 +4,28 @@ from Hist   import Histogram  # parent class
 from typing import Dict       # used to enforce the parent class typing
 
 class WL_histogram(Histogram):
+  wts           = 0.0                        # the array of WL weights
+  lnf           = 0.0                        # WL correction factor
+  lnf_scaler    = 1.0                        # the WL correction factor is decreases according to lnf *= lnf_scaler               
+  ratio_crit    = 0.0                        # flatness ratio that results in a decrease of lnf through the scaler                      
+  NSubs         = 0                          # number of sub-ensembles in the simulation
+  lnf_crit      = 0.0                        # when lnf <= crit_lnf the WL_histogram is considered equilibrated
+  isItDone      = False                      # becomes True when lnf <= crit_lnf
+  NVisits       = 0                          # number os visits logged for each sub-ensemble
+
   # Initializes a Wang-Landau histogram
   # the variable wts_hist (stands for weights) should be of the Histogram type
   def __init__(self,EEHisto: Histogram,lnf,lnf_scaler,ratio_crit, lnf_crit):
-
-    self.wts           = EEHisto.binValue           # the array of WL weights
-    self.lnf           = lnf                        # WL correction factor
-    self.lnf_scaler    = lnf_scaler                 # the WL correction factor is decreases according to lnf *= lnf_scaler               
-    self.ratio_crit    = ratio_crit                 # flatness ratio that results in a decrease of lnf through the scaler                      
-    self.NSubs         = EEHisto.NBins              # number of sub-ensembles in the simulation
-    self.lnf_crit      = lnf_crit                   # when lnf <= crit_lnf the WL_histogram is considered equilibrated
-    self.isItDone      = False                      # becomes True when lnf <= crit_lnf
+    self.NSubs         = EEHisto.NBins              
     NSubs              = self.NSubs
-    self.NVisits       = np.zeros(NSubs,np.int64)   # number os visits logged for each sub-ensemble
+    self.wts           = np.zeros(NSubs,np.double)
+    self.wts           = np.copy(EEHisto.binValue)         
+    self.lnf           = lnf                        
+    self.lnf_scaler    = lnf_scaler                               
+    self.ratio_crit    = ratio_crit                                     
+    self.lnf_crit      = lnf_crit                   
+    self.isItDone      = False                      
+    self.NVisits       = np.zeros(NSubs,np.int64)   
 
     # inherited histogram variables
     self.min           = EEHisto.min
@@ -63,6 +72,7 @@ class WL_histogram(Histogram):
     dos         = np.zeros(self.NSubs,np.double)
     dosMax      = np.amax(self.wts[:])
     dos         = self.wts[:] - dosMax
+
 
     mean_visits = np.mean(self.NVisits)
     if (mean_visits == 0.0):
