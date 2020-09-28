@@ -82,7 +82,7 @@ for i_loop in range(NLoops):
 
   # update the TMMC Histogram
   if (tmmc_used and np.mod(NStepsRan,sim.NStepsUpdateTM)):
-    sim.TMHist.update_TMMC_weights()
+    sim.TMHist.update_TMMC_weights(comm)
 
   timeStamp = "Simulation step: %8d" %(NStepsRan)
   if (sim.write_wl   and np.mod(NStepsRan,sim.NWStepWL) == 0 and comm.Get_rank() == 0):
