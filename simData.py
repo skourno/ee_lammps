@@ -52,8 +52,8 @@ class simData():
 	#
 	# ----------------------------------------------
 	def __init__(self,inData: input_data,write_info_bool=False):
-		self.Temp          = inData.Temp  # Simulation temperature in K
-		self.Beta          = 0.0          # Thermodynamic beta (1/kT)
+		self.Temp          = inData.Temp                           # Simulation temperature in K
+		self.Beta          = 1.0 / (self.Temp * 8.314 / 4184.0)    # Thermodynamic beta (1/kT)
 	
 		# General EE histogram info
 		if (not inData.ee_histo_parsed):
