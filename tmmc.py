@@ -3,6 +3,8 @@ import sys
 
 from Hist   import Histogram  # parent class
 from typing import Dict       # used to enforce the parent class typing
+from mpi4py import MPI
+
 
 # -------------------------------------------------------------
 # A class to support TMMC simulation runs. A transition matrix
@@ -64,7 +66,7 @@ class TMMC_histogram(Histogram):
   # ----------------------------------
   # use this to compute a weight/free energy and transition matrix
   # estimate based on the current collection matrix. 
-  def update_TMMC_weights(self):
+  def update_TMMC_weights(self,comm):
     # first avoid doing anything if 
 
     if (not self.allSubsLogged):
@@ -79,12 +81,17 @@ class TMMC_histogram(Histogram):
       self.TM[i_sub,1]  =  self.CM[i_sub+1,0] / np.sum(self.CM[i_sub+1,:]) # trans i_sub <- i_sub+1
       self.TM[i_sub,0]  =  self.CM[i_sub  ,2] / np.sum(self.CM[i_sub  ,:]) # trans i_sub -> i_sub+1
 
+
       # compute the weight of i_sub+1
       if (self.TM[i_sub,0] == 0):
         self.allSubsLogged = False # adresses a small bug appearing when not all directions havent been logged
         return
 
       self.wts[i_sub+1] =  self.wts[i_sub] + np.log( self.TM[i_sub,1] / self.TM[i_sub,0] )
+      
+      #if (comm.Get_rank() == 0):
+      #  print(i_sub+1, self.TM[i_sub,1], self.TM[i_sub,0], self.wts[i_sub+1], flush=True)
+
 
 
   # ----------------------------------
@@ -124,8 +131,8 @@ class TMMC_histogram(Histogram):
       file.write("#\n")
       for i_sub in range(self.NSubs):
         subEnsCoord = self.min + i_sub*self.width_bin
-        file.write('%12.3f %16.3f %16.5f \n' \
-                 %(subEnsCoord, dev_from_mean[i_sub], self(i_sub)))
+        file.write('%12.3f %16.3f %16.5f %16.3f %16.3f\n' \
+                 %(subEnsCoord, dev_from_mean[i_sub], self(i_sub), self.TM[i_sub,0], self.TM[i_sub,1]))
     
     file.write("\n")
     file.flush()
