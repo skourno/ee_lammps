@@ -58,7 +58,7 @@ testPart      = test_IonPair(inData.cationName, inData.iTypeTestCat,\
                              sim, lmp) 
 
 # initialize the following auxiliary variables
-accTrans     = False
+acceptTrans  = False
 idx_test_dir = 0      # index that decides the direction
 
 NStepsSE  = sim.NSteps_subEns
@@ -74,7 +74,7 @@ if (comm.Get_rank() == 0):
   print("----------------------------------------------------------")
   print(" > Starting the Expanded Ensemble exploration ...")
   print("\n")
-  print("    MD steps - Sub index - EE coord - PE (kcal/mol)")
+  print("    MD steps - Sub index - EE coord - PE (kcal/mol) - idx testCat - idx")
   print("\n")
 
 
@@ -99,15 +99,17 @@ for i_loop in range(NLoops):
   pe_old   = lmp.extract_compute("thermo_pe",0,0)
   iSub_old = sim.EEHist.idx_of(testPart.ee_coord())
 
+
+  if (testPart.Type =='Ion Pair'): 
+    charge = testPart.ee_coord()
+    if (charge == testPart.fullCharge): 
+      # fully charged and we can suffle the test particles
+      testPart.shuffle_testPart(lmp,comm)
+
   if (comm.Get_rank() == 0):
-    print("%10d %10d %10.2f %13.1f" %(NStepsRan+sim.NSteps_equil, iSub_old, testPart.charge, pe_old))
+    print("%10d %10d %10.2f %15.1f %12d %12d" \
+      %(NStepsRan+sim.NSteps_equil, iSub_old, testPart.charge, pe_old, testPart.idxCat, testPart.idxAn))
 
-
-  #if (testPart.Type =='Ion Pair'): 
-  #  charge = testPart.ee_coord()
-  #  if (charge == testPart.fullCharge): 
-  #    # fully charged and we can suffle the test particles
-  #    testPart.shuffle_testPart(lmp,comm)
 
   # Processor that has rank zero decides which direction to move
   # and broadcasts to everybody else
@@ -140,7 +142,7 @@ for i_loop in range(NLoops):
     comm.Barrier()
     lmp.command("run 0")
     pe_new = lmp.extract_compute("thermo_pe",0,0)
-    
+
     # compute the trans_probability
     delta_pe    = (pe_new - pe_old)
     expDE       = np.exp(-sim.Beta * delta_pe)
