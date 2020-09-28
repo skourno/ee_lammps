@@ -88,8 +88,8 @@ class test_IonPair(test_object):
 		# Choose the initial test ion pair to be idxCat1 and idxAn1
 		self.idxCat   = self.idxCat1
 		self.idxAn    = self.idxAn1
-		flag          = lmp.set_variable("idx_testCat", self.idxCat)
-		flag          = lmp.set_variable("idx_testAn" , self.idxAn )
+		flag1          = lmp.set_variable("idx_testCat", self.idxCat)
+		flag2          = lmp.set_variable("idx_testAn" , self.idxAn )
 
 		self.Dcharge   = sim.EEHist.width_bin # inherited from the ee histo
 		self.charge    = sim.EEHist.max       # start with full charge
@@ -112,11 +112,14 @@ class test_IonPair(test_object):
 	def subEns_change(self,lmp,iDir):
 		delta_q      = iDir * self.Dcharge
 		q_testCat    = self.charge + delta_q
-		q_testAn     = self.charge - delta_q
-		self.charge  = q_testCat
-		
+		q_testAn     = - q_testCat
+		self.charge  = + q_testCat
+
 		flag = lmp.set_variable("q_testCat", q_testCat)
 		flag = lmp.set_variable("q_testAn" , q_testAn)
+		#flag = lmp.set_variable("idx_testCat" , self.idxCat)
+		#flag = lmp.set_variable("idx_testAn"  , self.idxAn)
+
 		lmp.command("set atom ${idx_testCat} charge ${q_testCat}")
 		lmp.command("set atom ${idx_testAn}  charge ${q_testAn}" )
 
