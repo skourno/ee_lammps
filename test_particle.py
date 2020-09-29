@@ -8,12 +8,13 @@ import sys
 import numpy as np
 
 # ----------------------------------------------------------
-# Parent class of all test objects that should be inherited 
-# and used as a template for all test particles. The list
-# of functions displayed here are used by the main script 
-# to execute operations on the test particles
-# ----------------------------------------------------------
 class test_object():
+	"""
+Parent class of all test objects that should be inherited 
+and used as a template for all test particles. The list
+of functions displayed here are used by the main script 
+to execute operations on the test particles
+"""
 	Type = 'test particle template'
 
 	def __init__(self):
@@ -22,18 +23,21 @@ class test_object():
 		sys.exit('test_object.subEns_change : ERROR - Illegal call. subEns_change() is undefined within the class')
 	def ee_coord(self):
 		sys.exit('test_object.subEns_change : ERROR - Illegal call. ee_coord() is undefined within the class')
-	def print_info(self):
-		sys.exit('test_object.print_info : ERROR - Illegal call. print_info() is undefined within the class')
+	def print_idx(self):
+		sys.exit('test_object.print_idx : ERROR - Illegal call. print_idx() is undefined within the class')
 
 # ----------------------------------------------------------
-# An ion pair is chosen as the test object. The charge is 
-# gradually turned on/off when a subensemble change is
-# attempted.
-#
-# When using a test ion pair the ions of the pair should
-# appear last in the list of atom types.
+
 # ----------------------------------------------------------
 class test_IonPair(test_object):
+	"""
+An ion pair is chosen as the test object. The charge is 
+gradually turned on/off when a subensemble change is
+attempted.
+When using a test ion pair the ions of the pair should
+appear last in the list of atom types. 
+"""
+
 	idxCat     = -1     # global index of the test cation
 	idxAn      = -1     # global index of the test anion
 	Dcharge    =  0.0   # charge parturbation between sub-ensembles
@@ -46,12 +50,21 @@ class test_IonPair(test_object):
 	idxAn1     =  0     # the index of the first Anion  (of the test part type)
 	Type       = 'Ion Pair' 
 
+	# ----------------------------------------------------------
 	def __init__(self,   nameCation: str,\
 		                 iCatType:   int,\
 		                 nameAnion:  str,\
 		                 iAnType:    int,\
 		                 sim:    simData,\
 		                 lmp:     lammps):
+		"""Initialize the a test Ion Pair using:
+			nameCation : string containing the Cation name
+			iCatType   : index of the atom type that is the Cation
+			nameAnion  : string containing the Anion name
+			iAnType    : index of the atom type that is the Anion 
+			sim        : an initialized simulation object
+			lmp        : an initialized lammps simulation
+		"""
 
 		# Initializing auxiliary variables within lammps
 		lmp.command("variable idx_testCat  string -1")
@@ -100,16 +113,20 @@ class test_IonPair(test_object):
 		self.Type     = 'Ion Pair' 
 
 	#-----------------------------------------------
-	# the exp ens coordinate of the test Ion pair 
-	# is the abs(charge)
-	#-----------------------------------------------
 	def ee_coord(self):
+		"""the exp ens coordinate of the test Ion pair 
+		is the abs(charge)"""
+
 		return self.charge
 
 	#-----------------------------------------------
-	# changes the sub Ens to the specified direction
-	#-----------------------------------------------
 	def subEns_change(self,lmp,iDir):
+		"""Changes the sub Ens to the specified direction iDir
+		lmp  : is an initialized lammps simulation
+		iDir : is the direction of the change
+		       -1 decreases the sub index
+		        0 is a remain move
+		       +1 increases the sub index"""
 		delta_q      = iDir * self.Dcharge
 		q_testCat    = self.charge + delta_q
 		q_testAn     = - q_testCat
@@ -124,13 +141,19 @@ class test_IonPair(test_object):
 		lmp.command("set atom ${idx_testAn}  charge ${q_testAn}" )
 
 	#-----------------------------------------------
-	# If all ion pairs have full fractional charges, 
-	# randomly select ions to be the test pair
-	#
-	# comm is the mpi instance. Used for parallel
-	# execution
+	def print_idx(self):
+		"""Prints the indices of the test ion pair"""
+		return "C%d A%d" %(self.idxCat, self.idxAn)
+
+
 	#-----------------------------------------------
 	def shuffle_testPart(self,lmp,comm):
+		"""If all ion pairs have full fractional charges, 
+		randomly select ions to be the test pair.
+		lmp  : an initialized lammps simulation
+		comm : is the mpi instance. Used for parallel
+		execution"""
+
 		if (comm.Get_rank() == 0):
 			NIonPairs     = self.NIonPairs
 			idx_shift_cat = np.random.randint(0,NIonPairs)
