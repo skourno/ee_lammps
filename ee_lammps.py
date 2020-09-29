@@ -81,7 +81,7 @@ if (comm.Get_rank() == 0):
 for i_loop in range(NLoops):
 
   # update the TMMC Histogram
-  if (tmmc_used and np.mod(NStepsRan,sim.NStepsUpdateTM)):
+  if (tmmc_used and np.mod(NStepsRan,sim.NStepsUpdateTM) == 0):
     sim.TMHist.update_TMMC_weights(comm)
 
   timeStamp = "Simulation step: %8d" %(NStepsRan)
@@ -109,7 +109,6 @@ for i_loop in range(NLoops):
   if (comm.Get_rank() == 0):
     print("%10d %10d %10.2f %15.1f %12d %12d" \
       %(NStepsRan+sim.NSteps_equil, iSub_old, testPart.charge, pe_old, testPart.idxCat, testPart.idxAn))
-
 
   # Processor that has rank zero decides which direction to move
   # and broadcasts to everybody else
