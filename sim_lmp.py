@@ -3,10 +3,13 @@ from lammps import lammps
 import sys
 import numpy as np
 	
-# ----------------------------------------------------------------
-# Start lammps
-# ----------------------------------------------------------------
 def start_lammps(ISeed):
+	"""
+	Initialize a lammps simulation. 
+
+	Returns a lammps simulation object that can be 
+	passed to other routines.
+	"""
 	lmp = lammps(cmdargs=["-screen","none"])
 	lmp.command("units          real")
 	lmp.command("atom_style     full")
@@ -17,11 +20,15 @@ def start_lammps(ISeed):
 	return lmp
 
 # ----------------------------------------------------------------
-# Initialize a simulation of tip4p/05 water with ions in lammps
-#
-# Temp         : simulation temperature
+
 # ----------------------------------------------------------------
 def setup_tip4p_with_Ions(lmp, Temp):
+	"""
+	Initialize a simulation of tip4p/05 water with ions in lammps
+
+	Temp : simulation temperature in K
+	"""
+
 	# translate the arguments to lammps variables
 	lmp.command("variable Text equal  298.0")
 	flag = lmp.set_variable("Text" ,Temp)
@@ -45,15 +52,24 @@ def setup_tip4p_with_Ions(lmp, Temp):
 
 
 #------------------------------------------------------------
-# run a simulation with length 'NStepsRun' in number of timesteps
-#------------------------------------------------------------
 def run_lammps_sim(lmp,NStepsRun):
+	"""
+	Run a simulation with length 'NStepsRun' in number of timesteps
+	"""
 	lmp.command("variable NStepsRun string 100")
 	flag = lmp.set_variable("NStepsRun",NStepsRun)
 	lmp.command("run ${NStepsRun}")
 
 #------------------------------------------------------------
-def set_lammps_dump(lmp,NStepDump=200,DumpFileName="dump.atom"):
+def set_lammps_dump(lmp,NStepDump=200,DumpFileName="expEns.lammpstrj"):
+	"""
+	Forces a lammps simulation to output dump configurations
+	
+	Argument list:
+	lmp          -  the lammps instance
+	NStepDump    -  write a config every this many steps (OPTIONAL)
+	DumpFileName -  The name of the dump file            (OPTIONAL)
+	"""
 	lmp.command("variable DumpFileName  string dump.atom")
 	lmp.command("variable NStepDump     string 200      ")
 
