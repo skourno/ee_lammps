@@ -20,6 +20,7 @@
 
 import numpy as np
 import sys
+import inspect
 
 from mpi4py         import MPI
 from Hist           import Histogram
@@ -34,7 +35,7 @@ from simData        import simData
 
 InputFilePath = sys.argv[1]               # The name and path to the input file is given as an argument
 inData        = input_data(InputFilePath) # Read the input file
-sim           = simData(inData)           # Pass the input to a system info host
+sim           = simData(inData)           # Pass the input to a simulation info host
 
 comm          = MPI.COMM_WORLD            # initialize mpi
 lmp           = sim.init_lammps_Sim()     # Initialize the simulation
@@ -74,7 +75,7 @@ if (comm.Get_rank() == 0):
   print("----------------------------------------------------------")
   print(" > Starting the Expanded Ensemble exploration ...")
   print("\n")
-  print("    MD steps - Sub index - EE coord - PE (kcal/mol) - idx testCat - idx")
+  print("    MD steps - Sub index - EE coord - PE (kcal/mol) - testPart idx")
   print("\n")
 
 
@@ -107,8 +108,8 @@ for i_loop in range(NLoops):
       testPart.shuffle_testPart(lmp,comm)
 
   if (comm.Get_rank() == 0):
-    print("%10d %10d %10.2f %15.1f %12d %12d" \
-      %(NStepsRan+sim.NSteps_equil, iSub_old, testPart.charge, pe_old, testPart.idxCat, testPart.idxAn))
+    print("%10d %10d %10.2f %15.1f %16s" \
+      %(NStepsRan+sim.NSteps_equil, iSub_old, testPart.charge, pe_old, testPart.print_idx() ))
 
   # Processor that has rank zero decides which direction to move
   # and broadcasts to everybody else
