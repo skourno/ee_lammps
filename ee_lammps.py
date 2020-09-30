@@ -38,6 +38,7 @@ inData        = input_data(InputFilePath) # Read the input file
 sim           = simData(inData)           # Pass the input to a simulation info host
 
 comm          = MPI.COMM_WORLD            # initialize mpi
+irank         = comm.Get_rank()
 lmp           = sim.init_lammps_Sim()     # Initialize the simulation
 
 # Import the configuration as specified in the simData
@@ -71,7 +72,14 @@ wl_used   = sim.use_wl_bool
 tmmc_used = sim.use_tmmc_bool
 NSubs     = sim.EEHist.NBins
 
-if (comm.Get_rank() == 0):
+
+printMessage = False
+if (irank == 0):
+  # only allow proc with rank 0 to write messages
+  printMessage = True
+
+
+if (irank == 0):
   print("----------------------------------------------------------")
   print(" > Starting the Expanded Ensemble exploration ...")
   print("\n")
@@ -81,24 +89,29 @@ if (comm.Get_rank() == 0):
 
 for i_loop in range(NLoops):
 
-  # update the TMMC Histogram
-  if (tmmc_used and np.mod(NStepsRan,sim.NStepsUpdateTM) == 0):
-    sim.TMHist.update_TMMC_weights(comm)
+  # start by updating the weights using the correct roaming method
+  sim.update_roaming_weights(inData.ee_method)
+  wl_used   = sim.use_wl_bool # as it might be changed during a weight update
 
-  timeStamp = "Simulation step: %8d" %(NStepsRan)
-  if (sim.write_wl   and np.mod(NStepsRan,sim.NWStepWL) == 0 and comm.Get_rank() == 0):
+  # output the histos as specified in the input
+  timeStamp = "Simulation step: %8d" %(NStepsRan) 
+
+  if (wl_used   and sim.write_wl   and np.mod(NStepsRan,sim.NWStepWL) == 0 and irank == 0):
     sim.WLHist.write(timeStamp, sim.WL_FILE_out)
-  
-  if (sim.write_tmmc and np.mod(NStepsRan,sim.NWStepTM) == 0 and comm.Get_rank() == 0):
+
+  if (tmmc_used and sim.write_tmmc and np.mod(NStepsRan,sim.NWStepTM) == 0 and irank == 0):
     tag = "Simulation step: %8d" %(NStepsRan)
     sim.TMHist.write(timeStamp, sim.TM_FILE_out) 
   
+
+  # run a short simulation exploring the sub-ensemble
   comm.Barrier()
   run_lammps_sim(lmp,NStepsSE)
   NStepsRan += NStepsSE
 
-  pe_old   = lmp.extract_compute("thermo_pe",0,0)
-  iSub_old = sim.EEHist.idx_of(testPart.ee_coord())
+
+  pe_old   = lmp.extract_compute("thermo_pe",0,0)   # old potential energy
+  iSub_old = sim.EEHist.idx_of(testPart.ee_coord()) # index of the old sub-ensemble
 
 
   if (testPart.Type =='Ion Pair'): 
@@ -107,19 +120,21 @@ for i_loop in range(NLoops):
       # fully charged and we can suffle the test particles
       testPart.shuffle_testPart(lmp,comm)
 
-  if (comm.Get_rank() == 0):
+  if (irank == 0):
     print("%10d %10d %10.2f %15.1f %16s" \
       %(NStepsRan+sim.NSteps_equil, iSub_old, testPart.charge, pe_old, testPart.print_idx() ))
 
+
   # Processor that has rank zero decides which direction to move
   # and broadcasts to everybody else
-  if (comm.Get_rank() == 0):
+  if (irank == 0):
     rand_num = np.random.rand()
     if (rand_num < 0.5):
       idx_test_dir = +1
     else:
       idx_test_dir = -1
   idx_test_dir = comm.bcast(idx_test_dir,root=0)
+
 
   # If the attempted transition is going out of limits, reject it
   if ((iSub_old == 0       and  idx_test_dir == -1) or \
@@ -131,6 +146,9 @@ for i_loop in range(NLoops):
     if (tmmc_used):
       trans_prob = 0.0 
       sim.TMHist.update_collection_matrix(iSub_old, idx_test_dir, trans_prob)
+      
+      if (sim.TMHist.activated):
+        sim.TMHist.incr_visits(iSub_old)
   else:
     # Make the temporary changes to the test particles
     # Note that these changes have to be reverted if the
@@ -155,12 +173,11 @@ for i_loop in range(NLoops):
     # Processor that has rank zero decides to either
     # accept or reject the transition and broadcasts
     # the decision to others
-
-    if (comm.Get_rank() == 0):
-      delta_w     = sim.WLHist(iSub_new) - sim.WLHist(iSub_old)
+    if (irank == 0):
+      delta_w     = sim.wts[iSub_new] - sim.wts[iSub_old]
       arg         = np.exp(-sim.Beta * delta_pe + delta_w)
       acceptTrans = (arg > np.random.rand())
-    
+
     acceptTrans = comm.bcast(acceptTrans,root=0)
 
     if (acceptTrans):
@@ -177,10 +194,24 @@ for i_loop in range(NLoops):
       comm.Barrier()
       lmp.command("run 0")
 
+      # to be used to log visits for TMMC
+      iSub_new = iSub_old
+
+    # increase the # of visits in the tmmc histo (only if roaming the ee with it)
+    if (tmmc_used and sim.TMHist.activated):
+      sim.TMHist.incr_visits(iSub_new)
+
+
+  # update the TMMC Histogram
+  if (tmmc_used and np.mod(NStepsRan,sim.NStepsUpdateTM) == 0):
+    sim.TMHist.update_TMMC_weights()
+
+
+
+
 
 if (sim.write_wl):
   sim.WL_FILE_out.close()
 
 if (sim.write_tmmc):
   sim.TM_FILE_out.close()
-
