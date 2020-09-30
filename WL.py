@@ -13,9 +13,21 @@ class WL_histogram(Histogram):
   isItDone      = False                      # becomes True when lnf <= crit_lnf
   NVisits       = 0                          # number os visits logged for each sub-ensemble
 
-  # Initializes a Wang-Landau histogram
-  # the variable wts_hist (stands for weights) should be of the Histogram type
+  # 
   def __init__(self,EEHisto: Histogram,lnf,lnf_scaler,ratio_crit, lnf_crit):
+    """
+    Initializes a Wang-Landau histogram
+
+    Arguments : 
+    EEHisto     -  A histogram that defines the Expanded sub-ensemble
+    lnf         -  Initial value of the WL correction factor
+    lnf_scaler  -  The WL correction factor is decreases according to lnf *= lnf_scaler
+    ratio_crit  -  Flatness ratio that results in a decrease of lnf through the scaler 
+    lnf_crit    -  When lnf <= crit_lnf the WL_histogram is considered equilibrated
+
+    The variable EEHisto should be of the Histogram type
+    """
+
     self.NSubs         = EEHisto.NBins              
     NSubs              = self.NSubs
     self.wts           = np.zeros(NSubs,np.double)
@@ -31,36 +43,50 @@ class WL_histogram(Histogram):
     self.min           = EEHisto.min
     self.max           = EEHisto.max
     self.width_bin     = EEHisto.width_bin
+    self.binValue      = self.wts
 
-  # self-calling the class will return the weight of the requested sub-ensemble i_sub
+  #-----------------------------------------------------
   def __call__(self,i_sub):
+    """
+    Self-calling the class will return the weight 
+    of the requested sub-ensemble i_sub
+    """
     return self.wts[i_sub]
 
+  #-----------------------------------------------------
   def reset_visits(self):
     self.NVisits[:] = 0
 
+  #-----------------------------------------------------
   def incr_visits(self,i_sub):
     self.NVisits[i_sub] += 1
 
+  #-----------------------------------------------------
   def penalize(self,i_sub):
     self.incr_visits(i_sub)
     self.wts[i_sub] -= self.lnf
     self.check_for_convergence()
 
+  #-----------------------------------------------------
   def update_penalty(self):
     self.lnf *= self.lnf_scaler
     self.reset_visits()
 
-  # checks the flatness of the WL histogram and update lnf and isItDone accordingly
+  #-----------------------------------------------------
   def check_for_convergence(self):
+    """
+    Checks the flatness of the WL histogram and 
+    updates lnf and isItDone accordingly
+    """
     ratio_current = np.min(self.NVisits/np.mean(self.NVisits))
     if (ratio_current > self.ratio_crit):
       self.update_penalty()
     if (self.lnf <= self.lnf_crit):
       self.isItDone = True
 
-  # write the WL histogram in a file
+  #-----------------------------------------------------
   def write(self,tag,file):
+    """Write the WL histogram in a file"""
     dev_from_mean    = np.zeros(self.NSubs) # initialize the deviation from mean visits column
 
     file.write("# %s\n" %tag)

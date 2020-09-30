@@ -1,8 +1,14 @@
 import sys  
 import numpy as np
 class Histogram:
-	# Initialize the class
+	# -----------------------------------------------
 	def __init__(self, min_lim,max_lim,width_bin):
+		"""
+		Initialize the class
+
+		The created histo will have a bin width that is as close
+		as possible to the one specified in the arguments
+		"""
 		self.min       = min_lim
 		self.max       = max_lim
 
@@ -15,9 +21,12 @@ class Histogram:
 		self.NBins     = NBins
 		self.binValue  = np.zeros(NBins,np.double)
 
-	# this class is callable with argument the index of a bin "iBin". 
-	# Result is the value stored in the bin
+	# -----------------------------------------------
 	def __call__(self,iBin):
+		"""
+		this class is callable with argument the index of a bin "iBin". 
+		Result is the value stored in the bin
+		"""
 		if (iBin < 0 or iBin > self.NBins-1):
 			print("\n")
 			print("Histogram.__call__ : ERROR - Bin index is out of bounds")
@@ -27,12 +36,17 @@ class Histogram:
 		return self.binValue[iBin]
 
 
-	# find the correct bin that "value" belongs to
+	# -----------------------------------------------
 	def idx_of(self,value):
+		"""find the correct bin that "value" (arg 1) belongs to"""
 		return round((value - self.min)/self.width_bin)
 
-	# write the histogram in a file. Accompany the write with a tag reference at the beginning
+	# -----------------------------------------------
 	def write_histo(self,tag,file):
+		"""
+		Write the histogram in a file. Accompany the write with a tag 
+		reference at the beginning
+		"""
 		file.write( tag )
 		file.write( "\n")
 		for iBin in range(self.NBins):

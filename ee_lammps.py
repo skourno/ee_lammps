@@ -11,8 +11,8 @@
 #
 #  Written by:
 #
-#  version 0.0 - Srikanth Ravipati  (rsri131@gmail.com)
 #  version 1.0 - Spiros Kournopulos (skourno@gmail.com)
+#  version 0.0 - Srikanth Ravipati  (rsri131@gmail.com)
 #
 #  github : https://github.com/skourno/ee_lammps.git
 #

@@ -3,15 +3,15 @@ import sys
 
 from Hist   import Histogram  # parent class
 from typing import Dict       # used to enforce the parent class typing
-from mpi4py import MPI
 
 
-# -------------------------------------------------------------
-# A class to support TMMC simulation runs. A transition matrix
-# is stored and can be used to estimate the free energy landscale
-# implied by the subensembles. 
 # -------------------------------------------------------------
 class TMMC_histogram(Histogram):
+  """
+  A class to support TMMC simulation runs. A transition matrix
+  is stored and can be used to estimate the free energy landscale
+  implied by the subensembles. 
+  """
   wts       =  0.0
   NSubs     =  0
   NVisits   =  0 
@@ -21,8 +21,8 @@ class TMMC_histogram(Histogram):
   allSubsLogged = False # if True it is safe to reduce the CM to weights
 
   # ----------------------------------
-  # Initialize the class with a histogram of size NSubs
   def __init__(self,EEHisto: Histogram):
+    """Initialize the class with a histogram of size NSubs"""
     NSubs               = EEHisto.NBins
     self.wts            = np.zeros(NSubs,np.double)
     self.wts            = np.copy(EEHisto.binValue)
@@ -37,15 +37,22 @@ class TMMC_histogram(Histogram):
     self.min            = EEHisto.min
     self.max            = EEHisto.max
     self.width_bin      = EEHisto.width_bin
+    self.binValue       = EEHisto.wts
 
   # ----------------------------------
-  # self-calling the class will return the weight of the requested sub-ensemble i_sub
   def __call__(self,i_sub):
+    """
+    Self-calling the class will return the 
+    weight of the requested sub-ensemble i_sub
+    """
     return self.wts[i_sub]
 
   # ----------------------------------
-  # returns True if trans probabalities for all the sub-ensembles have been logged
   def check_if_all_subensembles_have_been_logged(self):
+    """
+    Returns True if trans probabalities for all the 
+    sub-ensembles have been logged
+    """
     allSubsLogged = True # assume this is true and check if false
     for i_sub in range(self.NSubs):
       if (np.sum(self.CM[i_sub,:]) == 0.0):
@@ -55,14 +62,16 @@ class TMMC_histogram(Histogram):
     return allSubsLogged
 
 
-  # ----------------------------------
-  # the transition probability between two neighboring sub-ensembles 
-  # from i_sub to a neighbor is stored in the collection matrix. Instead
-  # of giving as input the second sub-ensemble, a direction iDir is
-  # given instead. Applicable values are iDir=-1,0,+1. -1 means a decrease
-  # of the sub-ensemble coordinate, +1 an increase and 0 a move that
-  # keeps us in sub-ensemble i_sub
+  # ---------------------------------- 
   def update_collection_matrix(self,i_sub,iDir,trans_prob):
+    """
+    The transition probability between two neighboring sub-ensembles 
+    from i_sub to a neighbor is stored in the collection matrix. Instead
+    of giving as input the second sub-ensemble, a direction iDir is
+    given instead. Applicable values are iDir=-1,0,+1. -1 means a decrease
+    of the sub-ensemble coordinate, +1 an increase and 0 a move that
+    keeps us in sub-ensemble i_sub
+    """
     if (iDir < -1 or iDir > 1):
       sys.exit('update_collection_matrix : ERROR - Invalid direction')
       
@@ -73,9 +82,11 @@ class TMMC_histogram(Histogram):
     self.CM[i_sub,i_sub_local] += -trans_prob + 1.0 
 
   # ----------------------------------
-  # use this to compute a weight/free energy and transition matrix
-  # estimate based on the current collection matrix. 
   def update_TMMC_weights(self):
+    """
+    Use this to compute a weight/free energy and transition matrix
+    estimate based on the current collection matrix. 
+    """
     # first avoid doing anything if 
     if (not self.allSubsLogged):
       self.allSubsLogged = self.check_if_all_subensembles_have_been_logged()
@@ -111,8 +122,8 @@ class TMMC_histogram(Histogram):
     self.NVisits[:]      = 0
 
   # ----------------------------------
-  # write the TMMC histogram in a file
   def write(self,tag,file):
+    """Write the TMMC histogram in a file"""
     dev_from_mean      = np.zeros(self.NSubs) # initialize the deviation from mean visits column
 
     if (self.activated):

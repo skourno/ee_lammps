@@ -10,11 +10,11 @@ import numpy as np
 # ----------------------------------------------------------
 class test_object():
 	"""
-Parent class of all test objects that should be inherited 
-and used as a template for all test particles. The list
-of functions displayed here are used by the main script 
-to execute operations on the test particles
-"""
+	Parent class of all test objects that should be inherited 
+	and used as a template for all test particles. The list
+	of functions displayed here are used by the main script 
+	to execute operations on the test particles
+	"""
 	Type = 'test particle template'
 
 	def __init__(self):
@@ -26,17 +26,17 @@ to execute operations on the test particles
 	def print_idx(self):
 		sys.exit('test_object.print_idx : ERROR - Illegal call. print_idx() is undefined within the class')
 
-# ----------------------------------------------------------
+
 
 # ----------------------------------------------------------
 class test_IonPair(test_object):
 	"""
-An ion pair is chosen as the test object. The charge is 
-gradually turned on/off when a subensemble change is
-attempted.
-When using a test ion pair the ions of the pair should
-appear last in the list of atom types. 
-"""
+	An ion pair is chosen as the test object. The charge is 
+	gradually turned on/off when a subensemble change is
+	attempted.
+	When using a test ion pair the ions of the pair should
+	appear last in the list of atom types. 
+	"""
 
 	idxCat     = -1     # global index of the test cation
 	idxAn      = -1     # global index of the test anion
@@ -57,7 +57,8 @@ appear last in the list of atom types.
 		                 iAnType:    int,\
 		                 sim:    simData,\
 		                 lmp:     lammps):
-		"""Initialize the a test Ion Pair using:
+		"""
+		Initialize the a test Ion Pair using:
 			nameCation : string containing the Cation name
 			iCatType   : index of the atom type that is the Cation
 			nameAnion  : string containing the Anion name
@@ -114,19 +115,23 @@ appear last in the list of atom types.
 
 	#-----------------------------------------------
 	def ee_coord(self):
-		"""the exp ens coordinate of the test Ion pair 
-		is the abs(charge)"""
+		"""
+		The exp ens coordinate of the test Ion pair 
+		is the abs(charge)
+		"""
 
 		return self.charge
 
 	#-----------------------------------------------
 	def subEns_change(self,lmp,iDir):
-		"""Changes the sub Ens to the specified direction iDir
+		"""
+		Changes the sub Ens to the specified direction iDir
 		lmp  : is an initialized lammps simulation
 		iDir : is the direction of the change
 		       -1 decreases the sub index
 		        0 is a remain move
-		       +1 increases the sub index"""
+		       +1 increases the sub index
+		"""
 		delta_q      = iDir * self.Dcharge
 		q_testCat    = self.charge + delta_q
 		q_testAn     = - q_testCat
@@ -148,11 +153,14 @@ appear last in the list of atom types.
 
 	#-----------------------------------------------
 	def shuffle_testPart(self,lmp,comm):
-		"""If all ion pairs have full fractional charges, 
+		"""
+		If all ion pairs have full fractional charges, 
 		randomly select ions to be the test pair.
+
 		lmp  : an initialized lammps simulation
 		comm : is the mpi instance. Used for parallel
-		execution"""
+		execution
+		"""
 
 		if (comm.Get_rank() == 0):
 			NIonPairs     = self.NIonPairs
