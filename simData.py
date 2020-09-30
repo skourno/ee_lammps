@@ -10,12 +10,13 @@ from WL      import WL_histogram
 
 import numpy as np
 
-
 # ----------------------------------------------
-# This class stores all the information on the 
-# submitted simulation run. 
 # ----------------------------------------------
 class simData():
+	"""
+	This class stores all the information on the 
+	submitted simulation run. 
+	"""
 
 	Temp           = 298.0 # Simulation temperature in K
 	Beta           = 0.0   # Thermodynamic beta (1/kT)
@@ -36,6 +37,7 @@ class simData():
 	DataFileName   = ''    # The data file name and path. Contains the init config and topology
 	NWStepWL       = 0     # wl write step
 	NWStepTM       = 0     # tmmc write step
+	wts            = 0.0   # weights used to roam the expanded ensemble
 
 	simInit_bool   = False # True if lammps has been initialized
 	sysLoaded_bool = False # True if a configuration and topology has been read
@@ -44,14 +46,15 @@ class simData():
 	NAtoms         = 0   # Number of atoms in the simulation
 
 	# ----------------------------------------------
-	# You can initialize with an input_data object. 
-	#
-	# OPTIONAL arg : write_info_bool, if True then
-	#                at the end of execution the 
-	#                imported info will be printed
-	#
 	# ----------------------------------------------
 	def __init__(self,inData: input_data,write_info_bool=False):
+		"""
+		You can initialize with an input_data object.
+		
+		OPTIONAL arg : write_info_bool, if True then
+		at the end of execution the imported info will 
+		be printed
+		"""
 		self.Temp          = inData.Temp                           # Simulation temperature in K
 		self.Beta          = 1.0 / (self.Temp * 8.314 / 4184.0)    # Thermodynamic beta (1/kT)
 	
@@ -67,7 +70,7 @@ class simData():
 			wts_init = np.zeros(self.EEHist.NBins,np.double)
 
 		# set the initial weights of the simulation
-		self.EEHist.binValue = wts_init
+		self.EEHist.binValue = np.copy(wts_init)
 
 		if (inData.use_wl_bool):
 			lnf_init      = inData.lnf
@@ -108,25 +111,37 @@ class simData():
 		else:
 			sys.exit('simulation.__init__ : ERROR - Use read_data in the input to import a configuration and topology')
 
+		self.wts = np.zeros(self.EEHist.NBins,np.double)
+		if  (inData.ee_method == 'wl' or inData.ee_method == 'wl_and_tmmc'):
+			self.update_roaming_weights('wl')
+		elif(inData.ee_method == 'tmmc'):
+			self.update_roaming_weights('tmmc')
+		else:
+			sys.exit('simulation.__init__ : ERROR - Undefined roaming method. Use ee_method to define one')
+
 		# print the initialized Sys info
 		if(write_info_bool):
 			#self.print_info
 			pass
 
 	# ----------------------------------------------
-	#  Initializes a lammps simulation using the data 
-	#  stored in the class
 	# ----------------------------------------------
 	def init_lammps_Sim(self):
+		"""
+		Initializes a lammps simulation using the data 
+		stored in the class
+		"""
 		lmp          = start_lammps(self.ISeed)
 		simInit_bool = True
 		return lmp 
 
 	# -----------------------------------------------
-	# reads the data file and initializes the associated
-	# class variables
 	# -----------------------------------------------
 	def import_config(self,lmp):
+		"""
+		Reads the data file and initializes the associated
+		class variables.
+		"""
 		lmp.command("variable DataFileName string data.run")
 		flag = lmp.set_variable("DataFileName",self.DataFileName)
 		lmp.command("read_data ${DataFileName} ")
@@ -137,4 +152,28 @@ class simData():
 		self.sysLoaded_bool = True
 
 
-		
+	# ----------------------------------------------
+	# ----------------------------------------------
+	def update_roaming_weights(self,ee_method):
+		"""
+		Updates the simulation weights acoording to the ee_method
+		specified
+		"""
+		if  (ee_method == 'wl'):
+			self.wts = np.copy(self.WLHist.wts)
+		elif(ee_method == 'tmmc'):
+			self.wts = np.copy(self.TMHist.wts)
+		elif(ee_method == 'wl_and_tmmc'):
+			if (self.WLHist.isItDone and self.TMHist.allSubsLogged):
+				# then it is time to roam with the TMMC weights
+				self.wts              = np.copy(self.TMHist.wts)
+				self.use_wl_bool      = False
+				self.TMHist.activated = True
+			else:
+				# if wl is not done or tmmc is not ready to produce weights
+				# then we use wl weights
+				self.wts = np.copy(self.WLHist.wts)
+
+
+
+
