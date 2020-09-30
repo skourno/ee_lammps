@@ -75,7 +75,7 @@ class TMMC_histogram(Histogram):
   # ----------------------------------
   # use this to compute a weight/free energy and transition matrix
   # estimate based on the current collection matrix. 
-  def update_TMMC_weights(self,comm):
+  def update_TMMC_weights(self):
     # first avoid doing anything if 
     if (not self.allSubsLogged):
       self.allSubsLogged = self.check_if_all_subensembles_have_been_logged()
@@ -97,7 +97,7 @@ class TMMC_histogram(Histogram):
       # compute the weight of i_sub+1
       self.wts[i_sub+1] =  self.wts[i_sub] + np.log( self.TM[i_sub,1] / self.TM[i_sub,0] )
       
-      #if (comm.Get_rank() == 0):
+      #if (irank == 0):
       #  print(i_sub+1, self.TM[i_sub,1], self.TM[i_sub,0], self.wts[i_sub+1], flush=True)
 
 
