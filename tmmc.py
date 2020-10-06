@@ -37,7 +37,7 @@ class TMMC_histogram(Histogram):
     self.min            = EEHisto.min
     self.max            = EEHisto.max
     self.width_bin      = EEHisto.width_bin
-    self.binValue       = EEHisto.wts
+    self.binValue       = self.wts
 
   # ----------------------------------
   def __call__(self,i_sub):
