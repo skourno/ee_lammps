@@ -25,7 +25,7 @@ class Mol_System:
 	Box         = domain(np.zeros(3,np.double))
 
 	def __init__(self, Box: domain):
-		self.Box = np.copy(Box)
+		self.Box = deepcopy(Box)
 		pass
 
 	def insert_spc(self,Spc):
@@ -34,11 +34,13 @@ class Mol_System:
 		atoms in a Mol_System. An Spc can be either an atom or a 
 		molecule.
 		"""
-		SpcIn = np.copy(Spc)
+		SpcIn = deepcopy(Spc)
 		if   type(SpcIn) == molecule:
 			self.__insert_mol(Spc)
 		elif type(SpcIn) == atom:
 			self.__insert_atom(Spc)
+		else:
+			sys.exit("Mol_System.insert_spc : ERROR - Unrecognised species")
 
 	def __insert_atom(self, atomIn: atom):
 		atomIn.xyz   = self.Box.fold(atomIn.xyz)
@@ -119,19 +121,21 @@ def Create_config_on_lattice(latt: lattice, Directions, shuffle_mols=False, NShu
 
 	SimBox    = domain(latt.edge)
 	MolSys    = Mol_System(SimBox)
+	iter_latt = iter(latt)      
 
 	for Dir in Directions:
 		Spc            = deepcopy(Dir[0])
 		NSpeciesOfThis = int(Dir[1])
 
 		for iSpc in range(0,NSpeciesOfThis):
-			xyz = next(latt)
+			xyz = next(iter_latt)
 			Spc.change_coords(xyz,SimBox)
 			MolSys.insert_spc(Spc)
 
 	MolSys.NSpecies = np.copy(NSpecies)
 
 	if (NAtomsTot != MolSys.NAtoms):
+		print(NAtomsTot, MolSys.NAtoms)
 		sys.exit("Create_config_on_lattice : ERROR - miscounted the number of atoms")
 
 	return MolSys

@@ -104,11 +104,11 @@ class lattice:
 						yield self(iCx, iCy, iCz, iNode)
 
 
-	def __next__(self):
-		for iCx in range(0, self.NCells_1D):
-			for iCy in range(0, self.NCells_1D):
-				for iCz in range(0, self.NCells_1D):
-					for iNode in range(0, self.uCell.NNodes):
-						yield self(iCx, iCy, iCz, iNode)
+	#def __next__(self):
+	#	for iCx in range(0, self.NCells_1D):
+	#		for iCy in range(0, self.NCells_1D):
+	#			for iCz in range(0, self.NCells_1D):#
+	#				for iNode in range(0, self.uCell.NNodes):
+	#					yield self(iCx, iCy, iCz, iNode)
 
-		
+

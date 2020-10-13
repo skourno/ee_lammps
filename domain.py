@@ -9,6 +9,6 @@ class domain:
 
 	def fold(self, xyz):
 		R = np.copy(xyz)
-		R = np.where(R > self.edge, R - self.edge *   np.floor(R/self.edge)) 
-		R = np.where(R < 0.0      , R + self.edge * (-np.floor(R/self.edge) + 1))
+		R = np.where(R > self.edge, R - self.edge *   np.floor(R/self.edge)     , R ) 
+		R = np.where(R < 0.0      , R + self.edge * (-np.floor(R/self.edge) + 1), R )
 		return R

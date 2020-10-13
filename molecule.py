@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 
 from operator import add, mul
 from atom     import atom
@@ -57,26 +58,21 @@ class molecule:
 		r_sum  = np.zeros(3,np.double)
 
 		for atom in self.At:
-			r_sum = list( map(add, r_sum, atom.xyz) )
+			r_sum += atom.xyz
 
-		return [ ri / self.NAtoms for ri in r_sum ]
-
-
-	def change_coords(self, xyz_new, box: domain):
-		refPoint   = self.center()
-		nRefPoint  = [ - ri for ri in refPoint ]
-		displace   = list( map(add, xyz_new, nRefPoint) )
-
-		for atom in self.At:
-			atom.xyz = list( map(add, atom.xyz, displace) )
-			atom.xyz = box.fold(atom.xyz)
+		return np.array([ ri / self.NAtoms for ri in r_sum ])
 
 
 	def displace(self, displace, box: domain):
 		for atom in self.At: 
-			atom.xyz = list( map(add, atom.xyz, displace) )
+			atom.xyz = atom.xyz + np.array(displace)
 			atom.xyz = box.fold(atom.xyz)
 
+	def change_coords(self, xyz_new, box: domain):
+		RefPoint   = self.center()	
+		displace   = np.array(xyz_new)	 - RefPoint
+
+		self.displace(displace, box)
 
 
 
