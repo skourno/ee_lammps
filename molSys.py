@@ -16,7 +16,8 @@ class Mol_System:
 	NAngleTypes = 0
 	NSpcTypes   = 0
 
-	NSpecies    = []
+	NSpcOf      = []
+	NSpc        = 0
 
 	At          = []
 	Bnd         = []
@@ -34,27 +35,34 @@ class Mol_System:
 		atoms in a Mol_System. An Spc can be either an atom or a 
 		molecule.
 		"""
-		SpcIn = deepcopy(Spc)
+		SpcIn   = deepcopy(Spc)
+		iSpc    = self.NSpc
+
 		if   type(SpcIn) == molecule:
-			self.__insert_mol(Spc)
+			SpcIn.idx    = iSpc
+			self.__insert_mol(SpcIn)
 		elif type(SpcIn) == atom:
-			self.__insert_atom(Spc)
+			SpcIn.iSpc   = iSpc
+			self.__insert_atom(SpcIn)
 		else:
 			sys.exit("Mol_System.insert_spc : ERROR - Unrecognised species")
+		
+		self.NSpc += 1
 
 	def __insert_atom(self, atomIn: atom):
 		atomIn.xyz   = self.Box.fold(atomIn.xyz)
 
 		if (atomIn.Type > self.NSpcTypes-1):
-			self.__expand_NSpecies(atomIn.Type)
+			self.__expand_NSpcOf(atomIn.Type)
 
 		atomIn.idx   = self.NAtoms
 		self.At.append(atomIn)
 		self.NAtoms += 1
 
 
-	def __insert_mol(self,mol: molecule):
+	def __insert_mol(self, mol: molecule):
 		for AtomIn in mol.At:
+			AtomIn.iSpc = mol.idx
 			self.__insert_atom(AtomIn)
 
 		for BndIn in mol.Bnd:
@@ -65,16 +73,14 @@ class Mol_System:
 			self.Ang.append(AngIn)
 			self.NAngles += 1
 
-	def __expand_NSpecies(self,MaxTypeIdx):
-		HowManyMore     = MaxTypeIdx - self.NSpcTypes + 1
-		padding         = [0] * HowManyMore
-		self.NSpecies   = self.NSpecies + padding
-		self.NSpcTypes += HowManyMore
+	def __expand_NSpcOf(self,MaxTypeIdx):
+		HowManyMore       = MaxTypeIdx - self.NSpcTypes + 1
+		padding           = [0] * HowManyMore
+		self.NSpcOf       = self.NSpcOf + padding
+		self.NSpcTypes   += HowManyMore
 
 
 
-
- 
 
 def Create_config_on_lattice(latt: lattice, Directions, shuffle_mols=False, NShuffles=0):
 	"""
@@ -132,7 +138,7 @@ def Create_config_on_lattice(latt: lattice, Directions, shuffle_mols=False, NShu
 			Spc.change_coords(xyz,SimBox)
 			MolSys.insert_spc(Spc)
 
-	MolSys.NSpecies = np.copy(NSpecies)
+	MolSys.NSpeciesOf = np.copy(NSpecies)
 
 	if (NAtomsTot != MolSys.NAtoms):
 		print(NAtomsTot, MolSys.NAtoms)
