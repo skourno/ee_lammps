@@ -1,6 +1,8 @@
 import numpy as np
 import sys
 
+from operator import mul
+
 class point:
 	"""A simple point class, initialize with coordinates xyz"""
 	xyz = np.zeros(3,np.double)
@@ -75,19 +77,21 @@ class lattice:
 	NNodes    = 0
 	uCell     = 0
 	edge      = 0.0
+	scaleUC   = 0.0
 
-	def __init__(self, kind, edge, NNodesMin):
+	def __init__(self, kind, scaleUC, NNodesMin):
 		self.uCell     =  unitCell(kind)
 		self.NCells_1D =  int(np.ceil( (NNodesMin / self.uCell.NNodes )**(1.0/3.0) ))
 		self.NCells    =  self.NCells_1D**3
 		self.NNodes    =  self.uCell.NNodes * self.NCells
-		self.edge      =  np.copy(edge)
+		self.scaleUC   =  np.copy(scaleUC)
+		self.edge      =  [ rUC * (self.NCells_1D-1) for rUC in scaleUC ]  
 
 	def __call__(self, iCx, iCy, iCz, iNode):
 		xyz   = np.zeros(3,np.double)
 		iCell = [iCx,iCy,iCz]
 
-		xyz   = np.multiply(iCell,self.edge) + self.uCell(iNode)
+		xyz   = np.multiply(iCell,self.scaleUC) + self.uCell(iNode)
 
 		return xyz
 
@@ -100,3 +104,11 @@ class lattice:
 						yield self(iCx, iCy, iCz, iNode)
 
 
+	def __next__(self):
+		for iCx in range(0, self.NCells_1D):
+			for iCy in range(0, self.NCells_1D):
+				for iCz in range(0, self.NCells_1D):
+					for iNode in range(0, self.uCell.NNodes):
+						yield self(iCx, iCy, iCz, iNode)
+
+		
