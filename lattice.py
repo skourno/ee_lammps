@@ -85,7 +85,7 @@ class lattice:
 		self.NCells    =  self.NCells_1D**3
 		self.NNodes    =  self.uCell.NNodes * self.NCells
 		self.scaleUC   =  np.copy(scaleUC)
-		self.edge      =  [ rUC * (self.NCells_1D-1) for rUC in scaleUC ]  
+		self.edge      =  [ rUC * self.NCells_1D for rUC in scaleUC ]  
 
 	def __call__(self, iCx, iCy, iCz, iNode):
 		xyz   = np.zeros(3,np.double)
