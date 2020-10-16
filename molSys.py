@@ -40,38 +40,64 @@ class Mol_System:
 
 		if   type(SpcIn) == molecule:
 			SpcIn.idx    = iSpc
-			self.__insert_mol(SpcIn)
+			idx          = self.__insert_mol(SpcIn)
 		elif type(SpcIn) == atom:
 			SpcIn.iSpc   = iSpc
-			self.__insert_atom(SpcIn)
+			idx          = self.__insert_atom(SpcIn)
 		else:
 			sys.exit("Mol_System.insert_spc : ERROR - Unrecognised species")
 		
 		self.NSpc += 1
 
 	def __insert_atom(self, atomIn: atom):
-		atomIn.xyz   = self.Box.fold(atomIn.xyz)
 
-		if (atomIn.Type > self.NSpcTypes-1):
-			self.__expand_NSpcOf(atomIn.Type)
+		if (atomIn.iSpc > self.NSpcTypes):
+			self.__expand_NSpcOf(atomIn.iSpc)
+
+		if (atomIn.Type+1 > self.NAtomTypes):
+			self.NAtomTypes += atomIn.Type - self.NAtomTypes + 1 
 
 		atomIn.idx   = self.NAtoms
 		self.At.append(atomIn)
 		self.NAtoms += 1
 
+		return atomIn.idx
+
+	def __insert_bond(self, BndIn: bond):
+		if (BndIn.Type+1 > self.NBondTypes):
+			self.NBondTypes += BndIn.Type - self.NBondTypes + 1 
+
+		BndIn.idx    = self.NBonds
+		self.Bnd.append(BndIn)
+		self.NBonds += 1
+		return BndIn.idx
+
+	def __insert_angle(self, AngIn: angle):
+		if (AngIn.Type+1 > self.NAngleTypes):
+			self.NAngleTypes += AngIn.Type - self.NAngleTypes + 1
+
+		AngIn.idx    = self.NAngles
+		self.Ang.append(AngIn)
+		self.NAngles+= 1
+		return AngIn.idx
 
 	def __insert_mol(self, mol: molecule):
 		for AtomIn in mol.At:
 			AtomIn.iSpc = mol.idx
-			self.__insert_atom(AtomIn)
+			old_idx     = AtomIn.idx
+			new_idx     = self.__insert_atom(AtomIn)
+
+		idx_shift = new_idx - old_idx
 
 		for BndIn in mol.Bnd:
-			self.Bnd.append(BndIn)
-			self.NBonds += 1
+			BndIn.At    += idx_shift
+			idx          = self.__insert_bond(BndIn)
 
 		for AngIn in mol.Ang:
-			self.Ang.append(AngIn)
-			self.NAngles += 1
+			AngIn.At    += idx_shift
+			idx          = self.__insert_angle(AngIn)
+
+		return mol.idx
 
 	def __expand_NSpcOf(self,MaxTypeIdx):
 		HowManyMore       = MaxTypeIdx - self.NSpcTypes + 1
@@ -122,7 +148,7 @@ def Create_config_on_lattice(latt: lattice, Directions, shuffle_mols=False, NShu
 		NAnglesTot       += NAngles * NSpeciesOfThis
 		NSpecies.append(NSpeciesOfThis) 
 
-	if np.sum(NSpecies) > latt.NCells:
+	if np.sum(NSpecies) > latt.NNodes:
 		sys.exit("Create_config_on_lattice : ERROR - the specified lattice is not big enough")
 
 	SimBox    = domain(latt.edge)
@@ -134,7 +160,7 @@ def Create_config_on_lattice(latt: lattice, Directions, shuffle_mols=False, NShu
 		NSpeciesOfThis = int(Dir[1])
 
 		for iSpc in range(0,NSpeciesOfThis):
-			xyz = next(iter_latt)
+			xyz = next(iter_latt) #+ 1.e-4 # add a small perturbation to avoid atoms on the surface of the lattice
 			Spc.change_coords(xyz,SimBox)
 			MolSys.insert_spc(Spc)
 
