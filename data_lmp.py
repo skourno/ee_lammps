@@ -122,9 +122,16 @@ class data_lammps:
 			iSpc     = int(lineArgs[1])-1
 			Type     = int(lineArgs[2])-1
 			charge   = float(lineArgs[3])
-			xyz      = [float(r) for r in lineArgs[4:]] 
+			xyz      = [float(r) for r in lineArgs[4:7]] 
 
-			AtomIn   = atom(idx, iSpc, Type, charge, xyz)
+			if (len(lineArgs) > 7):
+				# we read the image flags as well
+				Imag = [int(i) for i in lineArgs[7:]]
+			else:
+				Imag = np.zeros(3,np.integer)
+
+
+			AtomIn   = atom(idx, iSpc, Type, charge, xyz, Imag)
 
 			self.At.append(AtomIn)
 
@@ -171,8 +178,8 @@ class data_lammps:
 
 		self.__write_generalInfo(DataFile)
 		self.__write_Atoms(DataFile)
-		#self.__write_Bonds(DataFile)
-		#self.__write_Angles(DataFile)
+		self.__write_Bonds(DataFile)
+		self.__write_Angles(DataFile)
 
 
 	def __write_generalInfo(self,DataFile):
@@ -187,8 +194,8 @@ class data_lammps:
 		DataFile.write("\n")
 
 		DataFile.write("%8g %8g xlo xhi\n" %(self.Box_lo[0], self.Box_hi[0]) )
-		DataFile.write("%8g %8g xlo xhi\n" %(self.Box_lo[1], self.Box_hi[1]) )
-		DataFile.write("%8g %8g xlo xhi\n" %(self.Box_lo[2], self.Box_hi[2]) )
+		DataFile.write("%8g %8g ylo yhi\n" %(self.Box_lo[1], self.Box_hi[1]) )
+		DataFile.write("%8g %8g zlo zhi\n" %(self.Box_lo[2], self.Box_hi[2]) )
 		DataFile.write("\n")
 
 	def __write_Atoms(self,DataFile):
@@ -197,8 +204,30 @@ class data_lammps:
 
 		for At in self.At:
 			DataFile.write("%8d %8d %8d %12.4f %12.5f %12.5f %12.5f\n"    \
-				         %( At.idx+1, At.iSpc+1, At.Type+1, At.charge,\
-				            At.xyz[0], At.xyz[1], At.xyz[2] ) )
+	         %( At.idx+1, At.iSpc+1, At.Type+1, At.charge,\
+	            At.xyz[0], At.xyz[1], At.xyz[2] ) )
+			
+		DataFile.write("\n")
+
+
+	def __write_Bonds(self,DataFile):
+		DataFile.write("Bonds\n")
+		DataFile.write("\n")
+
+		for Bnd in self.Bnd:
+			DataFile.write("%8d %8d %8d %8d\n" %(Bnd.idx+1, Bnd.Type+1, Bnd.At[0], Bnd.At[1]))
+
+		DataFile.write("\n")
+
+
+	def __write_Angles(self,DataFile):
+		DataFile.write("Angles\n")
+		DataFile.write("\n")
+
+		for Ang in self.Ang:
+			DataFile.write("%8d %8d %8d %8d %8d\n" %(Ang.idx+1, Ang.Type+1, Ang.At[0], Ang.At[1], Ang.At[2]))
+
+		DataFile.write("\n")		
 
 
 
