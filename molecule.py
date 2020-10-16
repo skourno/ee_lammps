@@ -54,22 +54,22 @@ class molecule:
 		self.NBonds   = len(self.Bnd)
 		self.NAngles  = len(self.Ang)
 
-	def center(self):
+	def center(self, box: domain):
 		r_sum  = np.zeros(3,np.double)
 
 		for atom in self.At:
-			r_sum += atom.xyz
+			#r_sum += box.unfold(atom.xyz,atom.Img)
+			r_sum  += atom.xyz
 
 		return np.array([ ri / self.NAtoms for ri in r_sum ])
 
 
 	def displace(self, displace, box: domain):
 		for atom in self.At: 
-			atom.xyz = atom.xyz + np.array(displace)
-			atom.xyz = box.fold(atom.xyz)
+			atom.displace(displace,box)
 
 	def change_coords(self, xyz_new, box: domain):
-		RefPoint   = self.center()	
+		RefPoint   = self.center(box)	
 		displace   = np.array(xyz_new)	 - RefPoint
 
 		self.displace(displace, box)
