@@ -13,6 +13,7 @@ def start_lammps(ISeed):
 	lmp = lammps(cmdargs=["-screen","none"])
 	lmp.command("units          real")
 	lmp.command("atom_style     full")
+	lmp.command("log            log.lammps.ee")
 
 	lmp.command("variable seed  string 11111")
 	flag = lmp.set_variable("seed",ISeed)
