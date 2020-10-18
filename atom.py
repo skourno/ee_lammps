@@ -30,3 +30,6 @@ class atom:
 	def displace(self, displace, box: domain):
 		self.xyz            = list( map(add, self.xyz, displace) )
 		#self.xyz, self.Img  = box.fold(self.xyz)
+
+	def center(self):
+		return self.xyz
