@@ -1,0 +1,15 @@
+1) create a build folder at the lammps installation location
+
+
+2) Execute:
+> cmake -D BUILD_LIB=yes -D BUILD_SHARED_LIBS=yes -D PKG_PYTHON=yes -D PKG_MOLECULE=yes -D PKG_RIGID=yes -D PKG_KSPACE=yes ../cmake
+> make -j
+> make install
+
+3) cd to lammps/python
+
+4) python3 install.py -m lammps.py -l ../build/liblammps.so -v ../src/version.h
+
+
+
+
