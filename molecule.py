@@ -35,7 +35,7 @@ class angle:
 
 
 class molecule:
-	idx  = -1
+	iSpc = -1
 	At   = []
 	Bnd  = []
 	Ang  = []
@@ -44,8 +44,8 @@ class molecule:
 	NBonds  = 0
 	NAngles = 0
 
-	def __init__(self, idx, Atoms, Bonds, Angles):
-		self.idx   = idx
+	def __init__(self, iSpc, Atoms, Bonds, Angles):
+		self.iSpc  = iSpc
 		self.At    = deepcopy(Atoms)
 		self.Bnd   = deepcopy(Bonds)
 		self.Ang   = deepcopy(Angles)
@@ -54,11 +54,10 @@ class molecule:
 		self.NBonds   = len(self.Bnd)
 		self.NAngles  = len(self.Ang)
 
-	def center(self, box: domain):
+	def center(self):
 		r_sum  = np.zeros(3,np.double)
 
 		for atom in self.At:
-			#r_sum += box.unfold(atom.xyz,atom.Img)
 			r_sum  += atom.xyz
 
 		return np.array([ ri / self.NAtoms for ri in r_sum ])
@@ -69,7 +68,7 @@ class molecule:
 			atom.displace(displace,box)
 
 	def change_coords(self, xyz_new, box: domain):
-		RefPoint   = self.center(box)	
+		RefPoint   = self.center()	
 		displace   = np.array(xyz_new)	 - RefPoint
 
 		self.displace(displace, box)
