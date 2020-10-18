@@ -58,8 +58,6 @@ class Mol_System:
 			Spc1   = random.choice(self.Spc)
 			Spc2   = random.choice(self.Spc[TargetSlice])
 
-			print(iSwap, Spc1.iSpc,Spc2.iSpc)
-
 			xyz1   =  Spc1.center()
 			xyz2   =  Spc2.center()
 
