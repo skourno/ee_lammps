@@ -1,0 +1,30 @@
+# Original model from Berendsen et al, J Phys Chem 91:6269 (1987)
+# Charges and geometry are specified in the "data." file.
+
+mass 1 1.00794 # H
+mass 2 15.9994 # O
+mass 3 22.9900 # Na
+mass 4 35.4530 # Cl
+
+pair_style lj/cut/tip4p/long 2 1 1 1 0.1546 12.0
+#pair_modify tail yes
+#kspace_style ewald 1e-8 
+#kspace_modify gewald 0.25 kmax/ewald 13 13 13
+kspace_style pppm/tip4p 1.0e-5
+pair_modify table 0
+
+pair_coeff 1 1 0.00000  0.000
+pair_coeff 1 2 0.00000  0.000
+pair_coeff 2 2 0.18520 3.1589
+pair_coeff 3 3 0.35262 2.160
+pair_coeff 2 3 0.25555 2.659
+pair_coeff 4 4 0.012785 4.83 
+pair_coeff 2 4 0.04866  3.994 
+pair_coeff 3 4 0.067141 3.495
+
+bond_style harmonic
+bond_coeff 1 0.0 0.9572
+
+angle_style harmonic
+angle_coeff 1 0.0 104.52
+

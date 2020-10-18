@@ -1,0 +1,57 @@
+# Simulation step:        0
+# The weights of TMMC are inactive
+#
+# Insufficient sampling - Weights cannot be reduced from the CM
+# > Printing the CM instead ...
+#  iSub   dir_left       stay       dir_right
+#
+     0    0.000e+00    0.000e+00    0.000e+00 
+     1    0.000e+00    0.000e+00    0.000e+00 
+     2    0.000e+00    0.000e+00    0.000e+00 
+     3    0.000e+00    0.000e+00    0.000e+00 
+     4    0.000e+00    0.000e+00    0.000e+00 
+     5    0.000e+00    0.000e+00    0.000e+00 
+     6    0.000e+00    0.000e+00    0.000e+00 
+     7    0.000e+00    0.000e+00    0.000e+00 
+     8    0.000e+00    0.000e+00    0.000e+00 
+     9    0.000e+00    0.000e+00    0.000e+00 
+    10    0.000e+00    0.000e+00    0.000e+00 
+
+# Simulation step:      500
+# The weights of TMMC are inactive
+#
+# Insufficient sampling - Weights cannot be reduced from the CM
+# > Printing the CM instead ...
+#  iSub   dir_left       stay       dir_right
+#
+     0    0.000e+00    0.000e+00    0.000e+00 
+     1    0.000e+00    0.000e+00    0.000e+00 
+     2    0.000e+00    0.000e+00    0.000e+00 
+     3    0.000e+00    0.000e+00    0.000e+00 
+     4    0.000e+00    0.000e+00    0.000e+00 
+     5    0.000e+00    0.000e+00    0.000e+00 
+     6    0.000e+00    0.000e+00    0.000e+00 
+     7    0.000e+00    0.000e+00    0.000e+00 
+     8    0.000e+00    0.000e+00    0.000e+00 
+     9    1.862e-26    5.000e+00    7.000e+00 
+    10    6.553e-28    1.300e+01    0.000e+00 
+
+# Simulation step:     1000
+# The weights of TMMC are inactive
+#
+# Insufficient sampling - Weights cannot be reduced from the CM
+# > Printing the CM instead ...
+#  iSub   dir_left       stay       dir_right
+#
+     0    0.000e+00    0.000e+00    0.000e+00 
+     1    0.000e+00    0.000e+00    0.000e+00 
+     2    0.000e+00    0.000e+00    0.000e+00 
+     3    0.000e+00    0.000e+00    0.000e+00 
+     4    0.000e+00    0.000e+00    0.000e+00 
+     5    0.000e+00    0.000e+00    0.000e+00 
+     6    0.000e+00    0.000e+00    0.000e+00 
+     7    1.924e-21    2.000e+00    5.000e+00 
+     8    1.236e-22    6.000e+00    5.000e+00 
+     9    2.832e-24    8.000e+00    9.000e+00 
+    10    3.619e-27    1.500e+01    0.000e+00 
+

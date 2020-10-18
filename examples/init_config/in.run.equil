@@ -1,0 +1,36 @@
+log           log.lammps.equil
+units         real
+atom_style    full
+read_data     data.test
+include       tip4p05_NaCl.ff
+ 
+variable      Text equal 298.15
+ 
+group         hydrogen type 1
+group         oxygen   type 2
+ 
+velocity      all create ${Text} 12512
+ 
+neighbor      2.0 bin
+neigh_modify  every 1 delay 0 check yes
+timestep      2
+ 
+fix           constrain      all shake 1.0e-4 100 0 b 1 a 1
+fix           resize         all deform 1 x final 0.0 40.0 y final 0.0 40.0 z final 0.0 40.0 units box
+fix           removeMomentum all momentum 1 linear 1 1 1
+
+thermo_style  custom step temp press epair evdwl ecoul elong
+thermo_modify flush yes
+thermo        100
+
+run           1000
+
+dump          trj all atom 250 equil.lammpstrj
+
+unfix         resize
+fix           integrate all nvt temp ${Text} ${Text} 10.0
+run           10000
+
+write_dump    all atom equil_final_config.lammpstraj
+write_data    data.equil.final
+write_restart restart.equil
