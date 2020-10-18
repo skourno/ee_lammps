@@ -1,5 +1,6 @@
 import numpy    as np
 import sys
+import random
 
 from   lattice  import lattice
 from   atom     import atom
@@ -23,6 +24,8 @@ class Mol_System:
 	Bnd         = []
 	Ang         = []
 
+	Spc         = []
+
 	Box         = domain(np.zeros(3,np.double))
 
 	def __init__(self, Box: domain):
@@ -39,20 +42,34 @@ class Mol_System:
 		iSpc    = self.NSpc
 
 		if   type(SpcIn) == molecule:
-			SpcIn.idx    = iSpc
-			idx          = self.__insert_mol(SpcIn)
+			SpcIn.iSpc   = iSpc
+			iSpc         = self.__insert_mol(SpcIn)
 		elif type(SpcIn) == atom:
 			SpcIn.iSpc   = iSpc
 			idx          = self.__insert_atom(SpcIn)
 		else:
 			sys.exit("Mol_System.insert_spc : ERROR - Unrecognised species")
 		
+		self.Spc.append(SpcIn)
 		self.NSpc += 1
+
+	def rand_swaps(self,NSwaps,TargetSlice=slice(0,-1,1)):
+		for iSwap in range(NSwaps):
+			Spc1   = random.choice(self.Spc)
+			Spc2   = random.choice(self.Spc[TargetSlice])
+
+			print(iSwap, Spc1.iSpc,Spc2.iSpc)
+
+			xyz1   =  Spc1.center()
+			xyz2   =  Spc2.center()
+
+			Spc1.change_coords(xyz2, self.Box)
+			Spc2.change_coords(xyz1, self.Box)
 
 	def __insert_atom(self, atomIn: atom):
 
 		if (atomIn.iSpc > self.NSpcTypes):
-			self.__expand_NSpcOf(atomIn.iSpc)
+			self.__expand_SpcArrays(atomIn.iSpc)
 
 		if (atomIn.Type+1 > self.NAtomTypes):
 			self.NAtomTypes += atomIn.Type - self.NAtomTypes + 1 
@@ -83,7 +100,7 @@ class Mol_System:
 
 	def __insert_mol(self, mol: molecule):
 		for AtomIn in mol.At:
-			AtomIn.iSpc = mol.idx
+			AtomIn.iSpc = mol.iSpc
 			old_idx     = AtomIn.idx
 			new_idx     = self.__insert_atom(AtomIn)
 
@@ -97,18 +114,15 @@ class Mol_System:
 			AngIn.At    += idx_shift
 			idx          = self.__insert_angle(AngIn)
 
-		return mol.idx
+		return mol.iSpc
 
-	def __expand_NSpcOf(self,MaxTypeIdx):
+	def __expand_SpcArrays(self,MaxTypeIdx):
 		HowManyMore       = MaxTypeIdx - self.NSpcTypes + 1
 		padding           = [0] * HowManyMore
 		self.NSpcOf       = self.NSpcOf + padding
 		self.NSpcTypes   += HowManyMore
 
-
-
-
-def Create_config_on_lattice(latt: lattice, Directions, shuffle_mols=False, NShuffles=0):
+def Create_config_on_lattice(latt: lattice, Directions, shuffle_mols=False, NSwaps=0):
 	"""
 	Create a configuration within a Mol_System object on a lattice latt. The 
 	lattice size can't be of size smaller than the requested number of species 
@@ -169,6 +183,10 @@ def Create_config_on_lattice(latt: lattice, Directions, shuffle_mols=False, NShu
 	if (NAtomsTot != MolSys.NAtoms):
 		print(NAtomsTot, MolSys.NAtoms)
 		sys.exit("Create_config_on_lattice : ERROR - miscounted the number of atoms")
+
+	if (shuffle_mols):
+		MolSys.rand_swaps(NSwaps)
+
 
 	return MolSys
 
