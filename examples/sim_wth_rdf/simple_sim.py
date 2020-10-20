@@ -1,15 +1,22 @@
 from lammps         import lammps
-from sim_lmp        import Initialize_tip4p_with_Ions_simulation, run_lammps_sim
+from sim_lmp        import start_lammps, setup_tip4p_with_Ions, set_lammps_dump, run_lammps_sim
 from mpi4py         import MPI
 
 comm = MPI.COMM_WORLD
 
-lmp = Initialize_tip4p_with_Ions_simulation('tip4p05.data',298.15,98362)
+lmp = start_lammps(ISeed=752663)
 
-lmp.command("dump myDump all xyz 500 dump.atom")
-#lmp.command("dump_modify myDump scale no")
+lmp.command("read_data data.equil.final")
+
+setup_tip4p_with_Ions(lmp,Temp=298.15)
+
+
+
+set_lammps_dump(lmp,NStepDump=250,DumpFileName="rdf.lammpstrj")
+
 
 lmp.command("compute myRDF all rdf 50 3 4")
-lmp.command("fix fmyRDF all ave/time 1000 1000 1000000 c_myRDF[*] file NaCl.rdf mode vector")
+lmp.command("fix fmyRDF  all ave/time 200 5000 1000000 c_myRDF[*] file rdf_NaCl.xvg         mode vector")
+lmp.command("fix fmyRDF2 all ave/time 200 500  100000  c_myRDF[*] file rdf_NaCl_rolling.xvg mode vector")
 
-run_lammps_sim(lmp,2000000)
+run_lammps_sim(lmp,1000000)
