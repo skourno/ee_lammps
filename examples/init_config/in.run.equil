@@ -21,7 +21,7 @@ fix           removeMomentum all momentum 1 linear 1 1 1
 
 thermo_style  custom step temp press epair evdwl ecoul elong
 thermo_modify flush yes
-thermo        100
+thermo        250
 
 run           1000
 
@@ -29,8 +29,8 @@ dump          trj all atom 250 equil.lammpstrj
 
 unfix         resize
 fix           integrate all nvt temp ${Text} ${Text} 10.0
-run           10000
+run           1
 
 write_dump    all atom equil_final_config.lammpstraj
-write_data    data.equil.final
+write_data    data.equil.final nocoeff 
 write_restart restart.equil
