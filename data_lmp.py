@@ -178,8 +178,12 @@ class data_lammps:
 
 		self.__write_generalInfo(DataFile)
 		self.__write_Atoms(DataFile)
-		self.__write_Bonds(DataFile)
-		self.__write_Angles(DataFile)
+
+		if (self.NBonds > 0):
+			self.__write_Bonds(DataFile)
+
+		if (self.NAngles > 0):
+			self.__write_Angles(DataFile)
 
 
 	def __write_generalInfo(self,DataFile):
