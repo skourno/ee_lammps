@@ -52,6 +52,34 @@ def setup_tip4p_with_Ions(lmp, Temp):
 	lmp.command("fix removeMomentum all momentum 1 linear 1 1 1  ")
 
 
+# ----------------------------------------------------------------
+
+# ----------------------------------------------------------------
+def setup_LJ_with_Ions(lmp, Temp):
+	"""
+	Initialize a simulation of LJ water with ions in lammps
+
+	Temp : simulation temperature in K
+	"""
+
+	# translate the arguments to lammps variables
+	lmp.command("variable Text equal  300.0")
+	flag = lmp.set_variable("Text" ,Temp)
+
+	lmp.command("include        CGLJ.ff               ")  # the forcefield goes here
+
+	lmp.command("velocity       all create ${Text} 1234  ")
+	
+	lmp.command("thermo_style   custom step temp press epair evdwl ecoul elong")
+	lmp.command("thermo_modify  flush yes")
+	lmp.command("thermo 500") 
+	
+	lmp.command("timestep 2.0")
+	
+	lmp.command("fix integrate all nvt temp ${Text} ${Text} 100.0")
+
+
+
 #------------------------------------------------------------
 def run_lammps_sim(lmp,NStepsRun):
 	"""
