@@ -109,6 +109,7 @@ class test_IonPair(test_object):
 		self.charge    = sim.EEHist.max       # start with full charge
 		self.chargeMin = sim.EEHist.min
 		self.chargeMax = sim.EEHist.max
+		self.fullCharge = sim.EEHist.max
 	
 		# set a string flag that denotes the type the test particle
 		self.Type     = 'Ion Pair' 
@@ -137,10 +138,12 @@ class test_IonPair(test_object):
 		q_testAn     = - q_testCat
 		self.charge  = + q_testCat
 
+		if (q_testCat == 0.0):
+			q_testCat = 1.e-10
+			q_testAn  = 1.e-10
+
 		flag = lmp.set_variable("q_testCat", q_testCat)
 		flag = lmp.set_variable("q_testAn" , q_testAn)
-		#flag = lmp.set_variable("idx_testCat" , self.idxCat)
-		#flag = lmp.set_variable("idx_testAn"  , self.idxAn)
 
 		lmp.command("set atom ${idx_testCat} charge ${q_testCat}")
 		lmp.command("set atom ${idx_testAn}  charge ${q_testAn}" )
@@ -172,5 +175,5 @@ class test_IonPair(test_object):
 	
 		self.idxCat = comm.bcast(self.idxCat,root=0)
 		self.idxAn  = comm.bcast(self.idxAn ,root=0)
-		flag 		= lmp.set_variable("idx_testCat",self.idxCat)
+		flag        = lmp.set_variable("idx_testCat",self.idxCat)
 		flag        = lmp.set_variable("idx_testAn", self.idxAn)
