@@ -27,7 +27,7 @@ from Hist           import Histogram
 from WL             import WL_histogram
 from tmmc           import TMMC_histogram
 from lammps         import lammps
-from sim_lmp        import run_lammps_sim, setup_tip4p_with_Ions, set_lammps_dump
+from sim_lmp        import run_lammps_sim, setup_LJ_with_Ions, set_lammps_dump
 from input          import input_data
 from test_particle  import test_IonPair
 from simData        import simData
@@ -44,8 +44,7 @@ lmp           = sim.init_lammps_Sim()     # Initialize the simulation
 # Import the configuration as specified in the simData
 sim.import_config(lmp)            
 
-# setup a tip4p with ions simulation        
-setup_tip4p_with_Ions(lmp, sim.Temp)
+setup_LJ_with_Ions(lmp, sim.Temp)
 
 comm.Barrier()
 run_lammps_sim(lmp,sim.NSteps_equil)    # run an initial equilibration run
@@ -116,7 +115,7 @@ for i_loop in range(NLoops):
 
   if (testPart.Type =='Ion Pair'): 
     charge = testPart.ee_coord()
-    if (charge == testPart.fullCharge): 
+    if (abs(charge - testPart.fullCharge) < testPart.Dcharge*0.1): 
       # fully charged and we can suffle the test particles
       testPart.shuffle_testPart(lmp,comm)
 
