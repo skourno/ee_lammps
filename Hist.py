@@ -39,7 +39,7 @@ class Histogram:
 	# -----------------------------------------------
 	def idx_of(self,value):
 		"""find the correct bin that "value" (arg 1) belongs to"""
-		return round((value - self.min)/self.width_bin)
+		return int(round((value - self.min)/self.width_bin))
 
 	# -----------------------------------------------
 	def write_histo(self,tag,file):
