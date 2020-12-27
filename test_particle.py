@@ -177,3 +177,107 @@ class test_IonPair(test_object):
 		self.idxAn  = comm.bcast(self.idxAn ,root=0)
 		flag        = lmp.set_variable("idx_testCat",self.idxCat)
 		flag        = lmp.set_variable("idx_testAn", self.idxAn)
+
+# ----------------------------------------------------------
+class test_Ion(test_object):
+	"""
+	An ion is chosen as the test object. The charge is 
+	gradually turned on/off when a subensemble change is
+	attempted.
+	When using a test ion, it should
+	appear last in the list of atom types. 
+	"""
+
+	idx        = -1     # global index of the test cation
+	Dcharge    =  0.0   # charge parturbation between sub-ensembles
+	charge     =  0.0   # currect charge of the test particle
+	chargeMin  =  0.0   # is the minimum charge of the ee simulation (absolute)
+	chargeMax  =  1.0   # is the maximum charge of the ee simulation (absolute)
+	fullCharge =  1.0   # set by default to be 1.0                   (absolute)
+	Type       = 'Ion' 
+	sign       =  0     # +1 for cation and -1 for anion
+
+	# ----------------------------------------------------------
+	def __init__(self,   name:    str,\
+		                 iType:   int,\
+		                 charge:  float,\
+		                 sim:     simData,\
+		                 lmp:     lammps):
+		"""
+		Initialize the a test Ion Pair using:
+			name       : string containing the ion name
+			iType      : index of the atom type that is the ion
+			sim        : an initialized simulation object
+			lmp        : an initialized lammps simulation
+		"""
+
+		# Initializing auxiliary variables within lammps
+		lmp.command("variable idx_testIon  string -1")
+		lmp.command("variable q_testIon    string  0")
+		lmp.command("variable nameIon      string  ion")
+		lmp.command("variable iIon         string  0")
+	
+		flag          = lmp.set_variable("nameIon"    , name )
+		flag          = lmp.set_variable("iIon"    , iType)
+
+		# make auxiliary ion groups
+		lmp.command("group ${nameIon} type ${iIon}")
+
+		if (sim.NAtoms <= 0):
+			print("test_Ion.__init__ : ERROR - Found illegal num of Atoms in simData %d\n" %sim.NAtoms )
+			print('                            Load a configuration before Initializing a test_IonPair')	
+
+		# the ion should always be the last atom
+		self.idx = sim.NAtoms 
+
+		# Choose the initial test ion pair to be idxCat1 and idxAn1
+		flag1          = lmp.set_variable("idx_testIon", self.idx)
+
+		self.Dcharge   = sim.EEHist.width_bin # inherited from the ee histo
+		self.chargeMin = sim.EEHist.min
+		self.chargeMax = sim.EEHist.max
+		self.fullCharge = sim.EEHist.max
+	
+		# set a string flag that denotes the type of the test particle
+		self.Type     = 'Ion'
+
+
+		self.charge     = charge
+		self.sign       = np.sign(charge)
+
+	#-----------------------------------------------
+	def ee_coord(self):
+		"""
+		The exp ens coordinate of the test Ion pair 
+		is the abs(charge)
+		"""
+
+		return abs(self.charge)
+
+	#-----------------------------------------------
+	def subEns_change(self,lmp,iDir):
+		"""
+		Changes the sub Ens to the specified direction iDir
+		lmp  : is an initialized lammps simulation
+		iDir : is the direction of the change
+		       -1 decreases the sub index
+		        0 is a remain move
+		       +1 increases the sub index
+		"""
+
+
+		delta_q        = iDir * self.Dcharge * self.sign
+		self.charge    = self.charge + delta_q
+		q_testIon      = self.charge
+
+		if (self.charge  == 0.0):
+			q_testIon  = 1.e-10 * self.sign
+
+		flag = lmp.set_variable("q_testIon", q_testIon)
+
+		lmp.command("set atom ${idx_testIon} charge ${q_testIon}")
+
+	#-----------------------------------------------
+	def print_idx(self):
+		"""Prints the indices of the test ion pair"""
+		return "Ion%d" %(self.idx)

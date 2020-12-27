@@ -21,6 +21,7 @@ class input_data:
 	read_data_parsed    = False
 	sim_steps_parsed    = False
 	tp_IonPair_parsed   = False
+	tp_Ion_parsed       = False
 	set_temp_parsed     = False
 	init_dos_parsed     = False
 	write_wl_parsed     = False
@@ -49,6 +50,9 @@ class input_data:
 	anionName           = ''     # tp_IonPair
 	iTypeTestCat        = 0      # tp_IonPair
 	iTypeTestAn         = 0      # tp_IonPair
+	IonName             = ''     # tp_Ion
+	iTypeTestIon        = 0      # tp_Ion
+	tp_IonCharge        = 0.0    # tp_Ion
 	Temp                = 298.15 # set_temp
 	outFile_wl          = ''     # write_Wl
 	wstep_wl            = 0      # write_Wl
@@ -103,6 +107,9 @@ class input_data:
 				elif(lineArgs[0] == 'tp_IonPair'):
 					errorMessage           = self.tp_IonPair(lineArgs)
 					self.tp_IonPair_parsed = True		
+				elif(lineArgs[0] == 'tp_Ion'):
+					errorMessage           = self.tp_Ion(lineArgs)
+					self.tp_Ion_parsed     = True	
 				elif(lineArgs[0] == 'set_temp'):
 					errorMessage           = self.set_temp(lineArgs)
 					self.set_temp_parsed   = True		
@@ -214,6 +221,16 @@ class input_data:
 		self.cationName   = str(lineArgs[2])
 		self.iTypeTestAn  = int(lineArgs[3])
 		self.anionName    = str(lineArgs[4])
+		return self.NoErrorMessage
+
+	# ----------------------------------
+	def tp_Ion(self,lineArgs):
+		if  (len(lineArgs) != 4):
+			return 'tp_IonPair: Argument mismatch. Specify: iType, Name, charge(full)' # error
+
+		self.iTypeTestIon = int(lineArgs[1])
+		self.IonName      = str(lineArgs[2])
+		self.tp_IonCharge = float(lineArgs[3])
 		return self.NoErrorMessage
 
 	# ----------------------------------
