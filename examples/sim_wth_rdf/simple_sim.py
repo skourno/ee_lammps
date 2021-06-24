@@ -15,7 +15,7 @@ setup_tip4p_with_Ions(lmp,Temp=298.15)
 set_lammps_dump(lmp,NStepDump=250,DumpFileName="rdf.lammpstrj")
 
 
-lmp.command("compute myRDF all rdf 50 3 4")
+lmp.command("compute myRDF all rdf 200 3 4")
 lmp.command("fix fmyRDF  all ave/time 200 5000 1000000 c_myRDF[*] file rdf_NaCl.xvg         mode vector")
 lmp.command("fix fmyRDF2 all ave/time 200 500  100000  c_myRDF[*] file rdf_NaCl_rolling.xvg mode vector")
 

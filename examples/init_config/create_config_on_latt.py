@@ -9,8 +9,8 @@ import sys
 
 WaterDataFile = 'data.singleTIP4P-2005'
 NWaters       =  2134
-NCations      =  10
-NAnions       =  10
+NCations      =  29
+NAnions       =  29
 DataFileOut   = 'data.test'
 
 
